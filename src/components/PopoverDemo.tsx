@@ -1,6 +1,6 @@
-import * as React from "react";
-import { Popover } from "radix-ui";
-import "./PopoverDemo.css";
+import * as React from 'react';
+import { Popover } from 'radix-ui';
+import './PopoverDemo.css';
 
 const PopoverDemo = () => (
   <Popover.Root>
@@ -14,4 +14,4 @@ const PopoverDemo = () => (
   </Popover.Root>
 );
 
-export default PopoverDemo; 
+export default PopoverDemo;
