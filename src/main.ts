@@ -113,26 +113,6 @@ app.on('activate', () => {
 });
 
 // IPC 消息处理
-// 示例：接收来自渲染进程的消息
-ipcMain.on('app:get-version', event => {
-  event.returnValue = app.getVersion();
-});
-
-// 示例：接收来自渲染进程的消息，然后异步回复
-ipcMain.on('app:check-connection', event => {
-  // 模拟异步操作
-  setTimeout(() => {
-    if (mainWindow) {
-      mainWindow.webContents.send('app:connection-status', { connected: true });
-    }
-  }, 500);
-});
-
-// IPC 事件处理
-ipcMain.on('app-ready', event => {
-  console.log('App is ready in renderer process');
-});
-
 // 处理登出请求，清除 bilibili 的 cookie
 ipcMain.on('app:logout', async () => {
   try {

@@ -4,14 +4,13 @@ import SongRequest from './SongRequest';
 import ControlPanel from './ControlPanel';
 import Settings from './Settings';
 import ThemeSwitch from './ThemeSwitch';
-import RadixContent from './RadixContent';
 import UserProfileSection from './UserProfileSection';
 import { useLoginStore } from '../store/loginStore';
 
-type TabType = 'danmaku' | 'song' | 'control' | 'settings' | 'radix';
+type TabType = 'danmaku' | 'song' | 'control' | 'settings';
 
 const MainLayout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('radix');
+  const [activeTab, setActiveTab] = useState<TabType>('danmaku');
   const { isLoggedIn } = useLoginStore();
 
   return (
@@ -31,14 +30,6 @@ const MainLayout: React.FC = () => {
         {/* 侧边导航栏 */}
         <div className="w-48 p-4">
           <nav className="space-y-2">
-            <button
-              className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                activeTab === 'radix' ? 'active' : ''
-              }`}
-              onClick={() => setActiveTab('radix')}
-            >
-              Radix UI
-            </button>
             <button
               className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                 activeTab === 'danmaku' ? 'active' : ''
@@ -77,7 +68,6 @@ const MainLayout: React.FC = () => {
 
         {/* 内容区域 */}
         <div className="flex-1 p-4 overflow-auto">
-          {activeTab === 'radix' && <RadixContent />}
           {activeTab === 'danmaku' && <DanmakuViewer />}
           {activeTab === 'song' && <SongRequest />}
           {activeTab === 'control' && <ControlPanel />}
