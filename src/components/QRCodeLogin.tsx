@@ -249,19 +249,20 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
   return (
     <>
       <Button onClick={() => handleOpenChange(true)} variant="soft" color="indigo">
-        {isLoggedIn ? '重新登录' : '扫码登录'}
+        关联账号
       </Button>
 
       <Dialog.Root open={open} onOpenChange={handleOpenChange}>
         <Dialog.Content style={{ maxWidth: 350 }}>
-          <Dialog.Title>B站扫码登录</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
-            使用哔哩哔哩APP扫码登录
-          </Dialog.Description>
-
+          <Dialog.Title>关联账号信息</Dialog.Title>
           <Flex direction="column" align="center" gap="3">
             {qrImageUrl ? (
-              <Box style={{ position: 'relative' }}>
+              <Box
+                style={{
+                  position: 'relative',
+                  marginTop: '8px',
+                }}
+              >
                 <img
                   src={qrImageUrl}
                   alt="哔哩哔哩二维码登录"
@@ -325,14 +326,6 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
             <Button onClick={generateQRCode} disabled={isLoading} variant="soft">
               刷新二维码
             </Button>
-          </Flex>
-
-          <Flex gap="3" mt="4" justify="end">
-            <Dialog.Close>
-              <Button variant="soft" color="gray">
-                取消
-              </Button>
-            </Dialog.Close>
           </Flex>
 
           <button
