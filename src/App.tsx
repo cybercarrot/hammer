@@ -1,6 +1,8 @@
 import React from 'react';
 import Counter from './components/Counter';
 import PopoverDemo from './components/PopoverDemo';
+import { BearCounter, Controls } from './components/BearCounter';
+import TodoApp from './components/TodoApp';
 
 const App: React.FC = () => {
   return (
@@ -12,6 +14,17 @@ const App: React.FC = () => {
         <div className="mt-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Radix UI Popover Demo</h2>
           <PopoverDemo />
+        </div>
+
+        <div className="mt-8 p-4 bg-white rounded-lg shadow">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Zustand 状态管理示例</h2>
+          <BearCounter />
+          <Controls />
+        </div>
+
+        <div className="mt-8 p-4 bg-white rounded-lg shadow">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Zustand 待办事项应用</h2>
+          <TodoApp />
         </div>
       </div>
     </div>
