@@ -5,18 +5,22 @@ import ControlPanel from './ControlPanel';
 import Settings from './Settings';
 import ThemeSwitch from './ThemeSwitch';
 import RadixContent from './RadixContent';
+import UserProfileSection from './UserProfileSection';
+import { useLoginStore } from '../store/loginStore';
 
 type TabType = 'danmaku' | 'song' | 'control' | 'settings' | 'radix';
 
 const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('radix');
+  const { isLoggedIn } = useLoginStore();
 
   return (
     <div className="flex flex-col h-screen">
       {/* 标题栏 */}
       <div className="p-3 flex items-center justify-between">
         <h1 className="text-xl font-bold">哔哩哔哩直播助手</h1>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+          <UserProfileSection />
           <ThemeSwitch />
           <span className="text-xs">v1.0.0</span>
         </div>
@@ -83,7 +87,7 @@ const MainLayout: React.FC = () => {
 
       {/* 状态栏 */}
       <div className="p-2 text-sm flex justify-between">
-        <div>状态: 正常运行中</div>
+        <div>状态: {isLoggedIn ? '已登录' : '未登录'}</div>
         <div>
           <span className="text-xs">Made with 💖 by CLAUDE</span>
         </div>

@@ -30,20 +30,41 @@ const createWindow = () => {
 
   // 允许跨域访问
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders['Origin'] = 'https://chat.laplace.live';
+    // 根据请求的URL设置适当的Origin
+    // if (details.url.includes('bilibili.com')) {
+    details.requestHeaders['Origin'] = 'https://www.bilibili.com';
+    details.requestHeaders['Referer'] = 'https://www.bilibili.com';
+    // }
+
     callback({ requestHeaders: details.requestHeaders });
   });
 
-  // 设置CSP头
+  // 设置CSP头和允许跨域访问
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+
+    // 处理Set-Cookie头，将SameSite设为None并添加Secure标志
+    if (responseHeaders['set-cookie']) {
+      responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map((cookie: string) => {
+        // 如果cookie中没有SameSite，添加SameSite=None
+        if (!cookie.includes('SameSite=')) {
+          cookie += '; SameSite=None';
+        } else {
+          // 替换已有的SameSite值
+          cookie = cookie.replace(/SameSite=(Lax|Strict|None)/i, 'SameSite=None');
+        }
+
+        // 确保有Secure标志(SameSite=None需要Secure标志)
+        if (!cookie.includes('Secure')) {
+          cookie += '; Secure';
+        }
+
+        return cookie;
+      });
+    }
+
     callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap:",
-        ],
-        'Access-Control-Allow-Origin': ['*'],
-      },
+      responseHeaders,
     });
   });
 
@@ -91,39 +112,6 @@ app.on('activate', () => {
   }
 });
 
-// 设置安全策略，允许哔哩哔哩和laplace.live的加载
-app.on('web-contents-created', (_, contents) => {
-  contents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' https://*.laplace.live https://*.bilibili.com; script-src 'self' 'unsafe-inline' https://*.laplace.live https://*.bilibili.com; style-src 'self' 'unsafe-inline' https://*.laplace.live https://*.bilibili.com",
-        ],
-        'Access-Control-Allow-Origin': ['*'],
-      },
-    });
-  });
-
-  // 设置webview权限
-  contents.on('will-attach-webview', (event, webPreferences, params) => {
-    // 删除预加载脚本
-    delete webPreferences.preload;
-
-    // 允许在webview中运行Node.js
-    webPreferences.nodeIntegration = false;
-
-    // 禁用同源策略
-    webPreferences.webSecurity = false;
-
-    // 启用远程模块
-    webPreferences.contextIsolation = true;
-
-    // 允许加载不安全内容
-    webPreferences.allowRunningInsecureContent = true;
-  });
-});
-
 // IPC 消息处理
 // 示例：接收来自渲染进程的消息
 ipcMain.on('app:get-version', event => {
@@ -138,6 +126,25 @@ ipcMain.on('app:check-connection', event => {
       mainWindow.webContents.send('app:connection-status', { connected: true });
     }
   }, 500);
+});
+
+// IPC 事件处理
+ipcMain.on('app-ready', event => {
+  console.log('App is ready in renderer process');
+});
+
+// 处理登出请求，清除 bilibili 的 cookie
+ipcMain.on('app:logout', async () => {
+  try {
+    const cookies = await session.defaultSession.cookies.get({ domain: 'bilibili.com' });
+    for (const cookie of cookies) {
+      const url = `https://${cookie.domain}${cookie.path}`;
+      await session.defaultSession.cookies.remove(url, cookie.name);
+    }
+    console.log('Bilibili cookies cleared successfully');
+  } catch (error) {
+    console.error('Error clearing cookies:', error);
+  }
 });
 
 // In this file you can include the rest of your app's specific main process

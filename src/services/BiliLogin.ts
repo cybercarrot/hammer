@@ -1,0 +1,254 @@
+import axios from 'axios';
+
+// QR码生成接口返回的数据格式
+export interface QRCodeResponse {
+  url: string;
+  qrcode_key: string;
+}
+
+// QR码扫描状态接口返回的数据格式
+export interface QRCodePollResponse {
+  url: string;
+  refresh_token: string;
+  timestamp: number;
+  code: number;
+  message: string;
+}
+
+// 用户基本信息接口
+export interface UserInfoResponse {
+  isLogin: boolean; // 是否登录
+  email_verified: number;
+  face: string; // 头像URL
+  face_nft: number;
+  face_nft_type: number;
+  level_info: {
+    current_level: number;
+    current_min: number;
+    current_exp: number;
+    next_exp: string;
+  };
+  mid: number; // 用户ID
+  mobile_verified: number;
+  money: number; // 硬币数
+  moral: number;
+  official: {
+    role: number;
+    title: string;
+    desc: string;
+    type: number;
+  };
+  officialVerify: {
+    type: number;
+    desc: string;
+  };
+  pendant: {
+    pid: number;
+    name: string;
+    image: string;
+    expire: number;
+    image_enhance: string;
+    image_enhance_frame: string;
+    n_pid: number;
+  };
+  scores: number;
+  uname: string; // 用户名
+  vipDueDate: number;
+  vipStatus: number;
+  vipType: number;
+  vip_pay_type: number;
+  vip_theme_type: number;
+  vip_label: {
+    path: string;
+    text: string;
+    label_theme: string;
+    text_color: string;
+    bg_style: number;
+    bg_color: string;
+    border_color: string;
+    use_img_label: boolean;
+    img_label_uri_hans: string;
+    img_label_uri_hant: string;
+    img_label_uri_hans_static: string;
+    img_label_uri_hant_static: string;
+  };
+  vip_avatar_subscript: number;
+  vip_nickname_color: string;
+  vip: {
+    type: number;
+    status: number;
+    due_date: number;
+    vip_pay_type: number;
+    theme_type: number;
+    label: {
+      path: string;
+      text: string;
+      label_theme: string;
+      text_color: string;
+      bg_style: number;
+      bg_color: string;
+      border_color: string;
+      use_img_label: boolean;
+      img_label_uri_hans: string;
+      img_label_uri_hant: string;
+      img_label_uri_hans_static: string;
+      img_label_uri_hant_static: string;
+    };
+    avatar_subscript: number;
+    nickname_color: string;
+    role: number;
+    avatar_subscript_url: string;
+    tv_vip_status: number;
+    tv_vip_pay_type: number;
+    tv_due_date: number;
+    avatar_icon: {
+      icon_type: number;
+      icon_resource: Record<string, any>;
+    };
+  };
+  wallet: {
+    mid: number;
+    bcoin_balance: number;
+    coupon_balance: number;
+    coupon_due_time: number;
+  };
+  has_shop: boolean;
+  shop_url: string;
+  answer_status: number;
+  is_senior_member: number;
+  wbi_img: {
+    img_url: string;
+    sub_url: string;
+  };
+  is_jury: boolean;
+  name_render: any;
+}
+
+// 用户基本信息简化版（用于本地存储）
+export interface UserBasicInfo {
+  mid: number; // 用户ID
+  uname: string; // 用户昵称
+  face: string; // 用户头像URL
+  isLogin: boolean; // 登录状态
+}
+
+export class BiliLoginService {
+  // 生成QR码的API
+  private static readonly QR_GENERATE_URL =
+    'https://passport.bilibili.com/x/passport-login/web/qrcode/generate';
+  // 轮询QR码状态的API
+  private static readonly QR_POLL_URL =
+    'https://passport.bilibili.com/x/passport-login/web/qrcode/poll';
+  // 获取用户信息的API
+  private static readonly USER_INFO_URL = 'https://api.bilibili.com/x/web-interface/nav';
+  // 本地存储键名
+  private static readonly USER_INFO_KEY = 'bilibili_user_info';
+
+  /**
+   * 获取QR码数据
+   * @returns 返回QR码URL和key
+   */
+  public static async getQRCode(): Promise<QRCodeResponse> {
+    try {
+      const response = await axios.get(this.QR_GENERATE_URL);
+      const data = response.data;
+
+      if (data.code === 0 && data.data) {
+        return data.data as QRCodeResponse;
+      } else {
+        throw new Error(`获取二维码失败: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('获取QR码失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 轮询QR码状态
+   * @param qrcodeKey 二维码Key
+   * @returns 返回扫码状态
+   */
+  public static async pollQRCodeStatus(qrcodeKey: string): Promise<QRCodePollResponse> {
+    try {
+      // 注意：这里使用withCredentials以便接收和发送跨域cookie
+      const response = await axios.get(`${this.QR_POLL_URL}?qrcode_key=${qrcodeKey}`, {
+        withCredentials: true,
+      });
+      const data = response.data;
+
+      if (data.code === 0 && data.data) {
+        // 如果登录成功，可能会有一些cookies返回
+        if (data.data.code === 0) {
+          // 浏览器会自动处理 Cookie
+          console.log('登录成功，Cookie由浏览器自动处理');
+        }
+        return data.data as QRCodePollResponse;
+      } else {
+        throw new Error(`轮询二维码状态失败: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('轮询QR码状态失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取用户信息
+   * @returns 用户信息
+   */
+  public static async getUserInfo(): Promise<UserInfoResponse> {
+    try {
+      // 使用withCredentials让浏览器自动发送cookie
+      const config = { withCredentials: true };
+
+      const response = await axios.get(this.USER_INFO_URL, config);
+      const data = response.data;
+
+      if (data.code === 0 && data.data) {
+        const userInfo = data.data as UserInfoResponse;
+
+        // 如果用户已登录，保存基本信息到本地存储
+        if (userInfo.isLogin) {
+          this.saveUserBasicInfo({
+            mid: userInfo.mid,
+            uname: userInfo.uname,
+            face: userInfo.face,
+            isLogin: userInfo.isLogin,
+          });
+        }
+
+        return userInfo;
+      } else {
+        throw new Error(`获取用户信息失败: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 保存用户基本信息到本地存储
+   * @param userInfo 用户基本信息
+   */
+  public static saveUserBasicInfo(userInfo: UserBasicInfo): void {
+    localStorage.setItem(this.USER_INFO_KEY, JSON.stringify(userInfo));
+  }
+
+  /**
+   * 从本地存储获取用户基本信息
+   * @returns 用户基本信息，如果不存在则返回null
+   */
+  public static getUserBasicInfo(): UserBasicInfo | null {
+    const userInfoStr = localStorage.getItem(this.USER_INFO_KEY);
+    return userInfoStr ? JSON.parse(userInfoStr) : null;
+  }
+
+  /**
+   * 清除本地存储的用户信息
+   */
+  public static clearUserInfo(): void {
+    localStorage.removeItem(this.USER_INFO_KEY);
+  }
+}
