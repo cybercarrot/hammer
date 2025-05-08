@@ -50,7 +50,13 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       <div className="flex-1 flex flex-col">
         {/* 主弹幕显示区域 */}
         <div className="flex-1 border border-gray-300 rounded-lg overflow-hidden">
-          <webview ref={webviewRef} src={url} className="w-full h-full" allowpopups={true} />
+          <webview
+            ref={webviewRef}
+            src={url}
+            className="w-full h-full"
+            style={{ minHeight: '800px' }}
+            allowpopups={true}
+          />
         </div>
       </div>
     </div>
