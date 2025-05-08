@@ -44,14 +44,13 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ className = '' }) => {
 
   return (
     <IconButton
-      size="1"
+      size="2"
       variant="ghost"
       onClick={toggleTheme}
       aria-label="切换主题"
-      style={{ height: '26px', width: '26px' }}
       className={className}
     >
-      {isDark ? <MoonIcon width="16" height="16" /> : <SunIcon width="16" height="16" />}
+      {isDark ? <MoonIcon width="18" height="18" /> : <SunIcon width="18" height="18" />}
     </IconButton>
   );
 };

@@ -5,15 +5,10 @@ import ControlPanel from './ControlPanel';
 import Settings from './Settings';
 import ThemeSwitch from './ThemeSwitch';
 import UserProfileSection from './UserProfileSection';
-import { useLoginStore } from '../store/loginStore';
 import { Badge, Flex, Tabs, Box, Text, Container } from '@radix-ui/themes';
 import packageJson from '../../package.json';
 
-type TabType = 'danmaku' | 'song' | 'control' | 'settings';
-
 const MainLayout: React.FC = () => {
-  const { isLoggedIn } = useLoginStore();
-
   return (
     <Tabs.Root defaultValue="danmaku">
       <Flex direction="column" height="100vh">
