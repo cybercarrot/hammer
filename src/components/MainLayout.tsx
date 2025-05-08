@@ -1,8 +1,8 @@
 import React from 'react';
-import DanmakuViewer from './DanmakuViewer';
-import SongRequest from './SongRequest';
-import ControlPanel from './ControlPanel';
-import Settings from './Settings';
+import DanmakuViewer from '../pages/DanmakuViewer';
+import SongRequest from '../pages/SongRequest';
+import ControlPanel from '../pages/ControlPanel';
+import Settings from '../pages/Settings';
 import ThemeSwitch from './ThemeSwitch';
 import UserProfileSection from './UserProfileSection';
 import { Badge, Flex, Tabs, Box, Text, Container } from '@radix-ui/themes';
