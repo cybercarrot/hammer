@@ -1,0 +1,15 @@
+/* 导入 Radix UI 主题 */
+@import '@radix-ui/themes/styles.css';
+
+/* 自定义 Radix UI 主题变量 */
+.radix-themes {
+  --default-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 添加主题切换的过渡效果 */
+.radix-themes {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
