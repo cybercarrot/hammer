@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { setupCookieHandlers } from './main/cookies';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -13,8 +14,8 @@ let mainWindow: BrowserWindow | null = null;
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+    width: 1280,
+    height: 720,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       // 启用webview的支持
@@ -31,10 +32,10 @@ const createWindow = () => {
   // 允许跨域访问
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     // 根据请求的URL设置适当的Origin
-    // if (details.url.includes('bilibili.com')) {
-    details.requestHeaders['Origin'] = 'https://www.bilibili.com';
-    details.requestHeaders['Referer'] = 'https://www.bilibili.com';
-    // }
+    if (details.url.includes('bilibili.com')) {
+      details.requestHeaders['Origin'] = 'https://www.bilibili.com';
+      details.requestHeaders['Referer'] = 'https://www.bilibili.com';
+    }
 
     callback({ requestHeaders: details.requestHeaders });
   });
@@ -89,7 +90,11 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on('ready', () => {
+  createWindow();
+  // 设置Cookie处理程序
+  setupCookieHandlers();
+});
 
 // 禁用安全警告
 app.commandLine.appendSwitch('disable-site-isolation-trials');

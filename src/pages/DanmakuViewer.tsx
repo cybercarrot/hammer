@@ -13,12 +13,6 @@ interface HTMLWebViewElement extends HTMLElement {
   reload(): void;
 }
 
-// 扩展React的内部类型
-interface WebViewHTMLAttributes<T> extends React.HTMLAttributes<T> {
-  src?: string;
-  allowpopups?: boolean;
-}
-
 // 通过模块增强的方式扩展React类型
 declare module 'react' {
   interface IntrinsicElements {
@@ -33,6 +27,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
     // 当webview加载完成后执行相关操作
     const handleWebviewLoad = () => {
       console.log('Danmaku viewer loaded');
+      // webview.openDevTools();
     };
 
     const webview = webviewRef.current;

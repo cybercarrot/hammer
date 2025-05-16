@@ -15,9 +15,13 @@ contextBridge.exposeInMainWorld('electron', {
     onFromMain: (channel: string, callback: (...args: any[]) => void) => {
       ipcRenderer.on(channel, (_, ...args) => callback(...args));
     },
-    // 移除监听
-    removeListener: (channel: string, callback: (...args: any[]) => void) => {
-      ipcRenderer.removeListener(channel, callback);
+  },
+
+  // Cookies相关操作
+  cookies: {
+    // 获取指定域名的cookies
+    getCookiesByDomains: (domains: string[]) => {
+      return ipcRenderer.invoke('get-cookies-by-domains', domains);
     },
   },
 });
