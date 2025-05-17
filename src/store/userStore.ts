@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { BiliLoginService } from '../services/BiliLogin';
 
 // 定义用户状态接口
 interface UserState {
@@ -17,6 +18,8 @@ interface UserState {
   clearLoginState: () => void;
   // 退出登录
   logout: () => void;
+  // 检查现有登录状态
+  checkExistingLogin: () => Promise<boolean>;
 }
 
 const USER_STORAGE_KEY = 'user-store';
@@ -59,6 +62,44 @@ export const useUserStore = create<UserState>()(
           userId: '',
           avatar: '',
         });
+      },
+
+      // 检查是否已经登录，验证登录状态
+      checkExistingLogin: async () => {
+        try {
+          // 尝试获取用户信息，验证登录状态
+          const userInfo = await BiliLoginService.getUserInfo();
+
+          // 如果登录有效，更新登录状态
+          if (userInfo && userInfo.isLogin) {
+            set({
+              isLoggedIn: true,
+              username: userInfo.uname,
+              userId: userInfo.mid.toString(),
+              avatar: userInfo.face,
+            });
+            return true;
+          } else {
+            // 如果登录已失效，更新为未登录状态
+            set({
+              isLoggedIn: false,
+              username: '',
+              userId: '',
+              avatar: '',
+            });
+            return false;
+          }
+        } catch (error) {
+          console.error('验证登录状态失败', error);
+          // 出错时也更新为未登录状态
+          set({
+            isLoggedIn: false,
+            username: '',
+            userId: '',
+            avatar: '',
+          });
+          return false;
+        }
       },
     }),
     {

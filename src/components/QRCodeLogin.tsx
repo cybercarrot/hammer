@@ -4,14 +4,12 @@ import { Cross1Icon } from '@radix-ui/react-icons';
 import QRCode from 'qrcode';
 import { BiliLoginService } from '../services/BiliLogin';
 import { useUserStore } from '../store/userStore';
+import { useToast } from '../context/ToastContext';
 
-interface QRCodeLoginProps {
-  onLoginSuccess?: () => void;
-}
-
-const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
+const QRCodeLogin: React.FC = () => {
   // 登录状态
-  const { isLoggedIn, setLoginState } = useUserStore();
+  const { setLoginState } = useUserStore();
+  const { showToast } = useToast();
 
   // 对话框状态
   const [open, setOpen] = useState(false);
@@ -24,46 +22,12 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
   // 轮询定时器引用
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 追踪组件是否挂载
-  const isMountedRef = useRef(true);
-
-  // 初始化登录状态（从本地存储恢复）
+  // 组件卸载时清理轮询
   useEffect(() => {
-    // 设置组件已挂载
-    isMountedRef.current = true;
-
-    const checkExistingLogin = async () => {
-      try {
-        // 尝试获取用户信息，验证登录状态
-        const userInfo = await BiliLoginService.getUserInfo();
-
-        // 如果已登录，更新登录状态
-        if (userInfo && userInfo.isLogin) {
-          setLoginState(true, userInfo.uname, userInfo.mid.toString(), userInfo.face);
-        }
-      } catch (error) {
-        console.error('恢复登录状态失败', error);
-      }
-    };
-
-    // 仅在首次打开且未登录状态下检查
-    if (!isLoggedIn) {
-      checkExistingLogin();
-    }
-
-    // 组件卸载时清理
     return () => {
-      isMountedRef.current = false;
       clearPollingTimer();
     };
-  }, [isLoggedIn, setLoginState]);
-
-  // 安全地更新状态，确保组件仍然挂载
-  const safeSetState = (callback: () => void) => {
-    if (isMountedRef.current) {
-      callback();
-    }
-  };
+  }, []);
 
   // 清除轮询定时器
   const clearPollingTimer = () => {
@@ -83,20 +47,15 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
 
     try {
       // 设置加载状态
-      safeSetState(() => {
-        setIsLoading(true);
-        setScanStatus('正在生成二维码...');
-        setQrImageUrl('');
-      });
+      setIsLoading(true);
+      setScanStatus('正在生成二维码...');
+      setQrImageUrl('');
 
       // 清除之前的轮询
       clearPollingTimer();
 
       // 获取二维码数据
       const qrData = await BiliLoginService.getQRCode();
-
-      // 再次检查组件是否挂载且对话框是否打开
-      if (!isMountedRef.current || !open) return;
 
       // 生成二维码图片
       const qrImage = await QRCode.toDataURL(qrData.url, {
@@ -108,27 +67,17 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
         },
       });
 
-      // 最后一次检查组件是否挂载且对话框是否打开
-      if (!isMountedRef.current || !open) return;
-
       // 更新状态
-      safeSetState(() => {
-        setQrImageUrl(qrImage);
-        setScanStatus('请使用哔哩哔哩APP扫描二维码');
-        setIsLoading(false);
-      });
+      setQrImageUrl(qrImage);
+      setScanStatus('请使用哔哩哔哩APP扫描二维码');
+      setIsLoading(false);
 
       // 开始轮询
       startPolling(qrData.qrcode_key);
     } catch (error) {
       console.error('生成二维码失败', error);
-
-      if (isMountedRef.current && open) {
-        safeSetState(() => {
-          setScanStatus('生成二维码失败，请重试');
-          setIsLoading(false);
-        });
-      }
+      setScanStatus('生成二维码失败，请重试');
+      setIsLoading(false);
     }
   };
 
@@ -140,8 +89,8 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
     // 开始新的轮询
     timerRef.current = setInterval(async () => {
       try {
-        // 检查组件是否挂载且对话框是否打开
-        if (!isMountedRef.current || !open) {
+        // 如果对话框已关闭，停止轮询
+        if (!open) {
           clearPollingTimer();
           return;
         }
@@ -149,43 +98,34 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
         // 轮询扫码状态
         const result = await BiliLoginService.pollQRCodeStatus(key);
 
-        // 再次检查组件是否挂载且对话框是否打开
-        if (!isMountedRef.current || !open) {
-          clearPollingTimer();
-          return;
-        }
-
         // 处理不同状态
         switch (result.code) {
           case 0: // 登录成功
             handleLoginSuccess();
-            safeSetState(() => setScanStatus('登录成功！'));
+            setScanStatus('登录成功！');
             clearPollingTimer();
             break;
 
           case 86038: // 二维码已失效
-            safeSetState(() => setScanStatus('二维码已失效，请点击刷新'));
+            setScanStatus('二维码已失效，请点击刷新');
             clearPollingTimer();
             break;
 
           case 86090: // 已扫码但未确认
-            safeSetState(() => setScanStatus('已扫描，请在手机上确认'));
+            setScanStatus('已扫描，请在手机上确认');
             break;
 
           case 86101: // 未扫码
-            safeSetState(() => setScanStatus('请使用哔哩哔哩APP扫描二维码'));
+            setScanStatus('请使用哔哩哔哩APP扫描二维码');
             break;
 
           default:
-            safeSetState(() => setScanStatus(`未知状态：${result.message}`));
+            setScanStatus(`未知状态：${result.message}`);
         }
       } catch (error) {
         console.error('轮询扫码状态失败', error);
-
-        if (isMountedRef.current && open) {
-          safeSetState(() => setScanStatus('检查扫码状态失败，请刷新二维码'));
-          clearPollingTimer();
-        }
+        setScanStatus('检查扫码状态失败，请刷新二维码');
+        clearPollingTimer();
       }
     }, 3000);
   };
@@ -196,61 +136,43 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
       // 获取用户信息
       const userInfo = await BiliLoginService.getUserInfo();
 
-      if (!isMountedRef.current) return;
-
       if (userInfo && userInfo.isLogin) {
         // 更新登录状态
         setLoginState(true, userInfo.uname, userInfo.mid.toString(), userInfo.face);
 
         // 关闭对话框
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            setOpen(false);
-            onLoginSuccess?.();
-          }
-        }, 1000);
+        setOpen(false);
+
+        // 显示成功提示
+        showToast('账号关联成功', 'success');
       } else {
-        safeSetState(() => setScanStatus('登录成功，但无法获取用户信息'));
+        setScanStatus('登录成功，但无法获取用户信息');
       }
     } catch (error) {
       console.error('处理登录成功失败', error);
-
-      if (isMountedRef.current) {
-        safeSetState(() => setScanStatus('登录成功，但无法获取用户信息'));
-      }
+      setScanStatus('登录成功，但无法获取用户信息');
     }
   };
 
-  // 对话框打开/关闭处理
-  const handleOpenChange = (openState: boolean) => {
-    // 如果状态相同则不处理
-    if (open === openState) return;
-
-    setOpen(openState);
-
-    if (!openState) {
-      // 关闭对话框，清除轮询和状态
-      clearPollingTimer();
-      safeSetState(() => {
-        setQrImageUrl('');
-        setScanStatus('等待生成二维码');
-        setIsLoading(false);
-      });
-    }
-  };
-
-  // 监听对话框打开状态，生成二维码
+  // 监听对话框打开/关闭状态
   useEffect(() => {
     if (open) {
+      // 对话框打开，生成二维码
       generateQRCode();
+    } else {
+      // 对话框关闭，清理状态
+      clearPollingTimer();
+      setQrImageUrl('');
+      setScanStatus('等待生成二维码');
+      setIsLoading(false);
     }
   }, [open]);
 
   return (
     <>
-      <Button onClick={() => handleOpenChange(true)}>关联账号</Button>
+      <Button onClick={() => setOpen(true)}>关联账号</Button>
 
-      <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+      <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Content style={{ maxWidth: 350 }}>
           <Dialog.Title>关联账号信息</Dialog.Title>
           <Flex direction="column" align="center" gap="3">

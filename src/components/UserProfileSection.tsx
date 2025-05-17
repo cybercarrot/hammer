@@ -29,7 +29,7 @@ const UserProfileSection: React.FC = () => {
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       ) : (
-        <QRCodeLogin onLoginSuccess={() => console.log('登录成功')} />
+        <QRCodeLogin />
       )}
     </div>
   );

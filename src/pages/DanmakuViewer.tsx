@@ -16,6 +16,7 @@ import { ConfigProps, uploadCookies } from '../utils/cookies';
 import { WebviewTag } from 'electron';
 import { useToast } from '../context/ToastContext';
 import { useSettingStore } from '../store/settingStore';
+import { useUserStore } from '../store/userStore';
 
 interface DanmakuViewerProps {
   url?: string;
@@ -32,6 +33,9 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   // 获取合并的token字符串
   const mergedToken = getMergedToken();
+
+  // 获取用户登录状态
+  const { isLoggedIn } = useUserStore();
 
   // 在新窗口中打开链接
   const openInNewWindow = () => {
@@ -94,6 +98,12 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   // 同步cookie
   const handleUploadCookies = async () => {
+    // 检查用户是否已登录
+    if (!isLoggedIn) {
+      showToast('请先关联账号', 'error');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const configData: ConfigProps = {

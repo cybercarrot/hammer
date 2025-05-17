@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import DanmakuViewer from '../pages/DanmakuViewer';
 import SongRequest from '../pages/SongRequest';
 import ControlPanel from '../pages/ControlPanel';
@@ -7,8 +7,24 @@ import ThemeSwitch from './ThemeSwitch';
 import UserProfileSection from './UserProfileSection';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
 import packageJson from '../../package.json';
+import { useUserStore } from '../store/userStore';
 
 const MainLayout: React.FC = () => {
+  // 获取检查登录状态的方法
+  const { checkExistingLogin } = useUserStore();
+
+  // 组件挂载时检查登录状态
+  useEffect(() => {
+    // 应用启动时验证登录状态
+    checkExistingLogin()
+      .then(isLoggedIn => {
+        console.log('登录状态验证结果:', isLoggedIn);
+      })
+      .catch(error => {
+        console.error('验证登录状态出错:', error);
+      });
+  }, [checkExistingLogin]);
+
   return (
     <Tabs.Root defaultValue="danmaku">
       <Flex direction="column" height="100vh">
