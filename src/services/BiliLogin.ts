@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useUserStore } from '../store/userStore';
 
 // QR码生成接口返回的数据格式
 export interface QRCodeResponse {
@@ -124,14 +125,6 @@ export interface UserInfoResponse {
   name_render: any;
 }
 
-// 用户基本信息简化版（用于本地存储）
-export interface UserBasicInfo {
-  mid: number; // 用户ID
-  uname: string; // 用户昵称
-  face: string; // 用户头像URL
-  isLogin: boolean; // 登录状态
-}
-
 export class BiliLoginService {
   // 生成QR码的API
   private static readonly QR_GENERATE_URL =
@@ -141,8 +134,6 @@ export class BiliLoginService {
     'https://passport.bilibili.com/x/passport-login/web/qrcode/poll';
   // 获取用户信息的API
   private static readonly USER_INFO_URL = 'https://api.bilibili.com/x/web-interface/nav';
-  // 本地存储键名
-  private static readonly USER_INFO_KEY = 'bilibili_user_info';
 
   /**
    * 获取QR码数据
@@ -208,14 +199,12 @@ export class BiliLoginService {
       if (data.code === 0 && data.data) {
         const userInfo = data.data as UserInfoResponse;
 
-        // 如果用户已登录，保存基本信息到本地存储
+        // 如果用户已登录，更新userStore中的用户信息
         if (userInfo.isLogin) {
-          this.saveUserBasicInfo({
-            mid: userInfo.mid,
-            uname: userInfo.uname,
-            face: userInfo.face,
-            isLogin: userInfo.isLogin,
-          });
+          // 在静态方法中，我们不能直接使用hook
+          // 但我们可以获取store状态和操作
+          const userStore = useUserStore.getState();
+          userStore.setLoginState(true, userInfo.uname, userInfo.mid.toString(), userInfo.face);
         }
 
         return userInfo;
@@ -226,29 +215,5 @@ export class BiliLoginService {
       console.error('获取用户信息失败:', error);
       throw error;
     }
-  }
-
-  /**
-   * 保存用户基本信息到本地存储
-   * @param userInfo 用户基本信息
-   */
-  public static saveUserBasicInfo(userInfo: UserBasicInfo): void {
-    localStorage.setItem(this.USER_INFO_KEY, JSON.stringify(userInfo));
-  }
-
-  /**
-   * 从本地存储获取用户基本信息
-   * @returns 用户基本信息，如果不存在则返回null
-   */
-  public static getUserBasicInfo(): UserBasicInfo | null {
-    const userInfoStr = localStorage.getItem(this.USER_INFO_KEY);
-    return userInfoStr ? JSON.parse(userInfoStr) : null;
-  }
-
-  /**
-   * 清除本地存储的用户信息
-   */
-  public static clearUserInfo(): void {
-    localStorage.removeItem(this.USER_INFO_KEY);
   }
 }

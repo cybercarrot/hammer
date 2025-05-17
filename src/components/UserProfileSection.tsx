@@ -1,10 +1,10 @@
 import React from 'react';
 import { Avatar, Text, DropdownMenu, Button, Flex } from '@radix-ui/themes';
 import QRCodeLogin from './QRCodeLogin';
-import { useLoginStore } from '../store/loginStore';
+import { useUserStore } from '../store/userStore';
 
 const UserProfileSection: React.FC = () => {
-  const { isLoggedIn, username, userId, avatar, logout } = useLoginStore();
+  const { isLoggedIn, username, userId, avatar, logout } = useUserStore();
 
   return (
     <div className="flex items-center">

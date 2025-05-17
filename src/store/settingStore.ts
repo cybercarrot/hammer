@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import shortUuid from 'short-uuid';
 
 type ThemeType = 'light' | 'dark';
+
+// 弹幕机配置接口
+interface DanmakuConfig {
+  password: string;
+  uuid: string;
+}
 
 // 设置状态接口
 interface SettingState {
@@ -11,9 +18,18 @@ interface SettingState {
   setTheme: (theme: ThemeType) => void;
   // 切换主题
   toggleTheme: () => void;
+
+  // 弹幕机配置
+  danmakuConfig: DanmakuConfig;
+  // 更新弹幕机配置
+  updateDanmakuConfig: (config: Partial<DanmakuConfig>) => void;
+  // 重新生成弹幕机ID
+  regenerateDanmakuIds: () => void;
+  // 获取合并的token
+  getMergedToken: () => string;
 }
 
-const THEME_STORAGE_KEY = 'hammer-settings';
+const THEME_STORAGE_KEY = 'setting-store';
 
 // 获取初始主题
 const getInitialTheme = (): ThemeType => {
@@ -25,6 +41,14 @@ const getInitialTheme = (): ThemeType => {
   }
 
   return 'dark'; // 默认主题
+};
+
+// 获取初始弹幕机配置
+const getInitialDanmakuConfig = (): DanmakuConfig => {
+  return {
+    password: shortUuid.generate(),
+    uuid: shortUuid.generate(),
+  };
 };
 
 // 创建设置状态管理store
@@ -50,10 +74,42 @@ export const useSettingStore = create<SettingState>()(
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         get().setTheme(newTheme);
       },
+
+      // 弹幕机配置
+      danmakuConfig: getInitialDanmakuConfig(),
+
+      // 更新弹幕机配置
+      updateDanmakuConfig: config => {
+        set(state => ({
+          danmakuConfig: {
+            ...state.danmakuConfig,
+            ...config,
+          },
+        }));
+      },
+
+      // 重新生成弹幕机ID
+      regenerateDanmakuIds: () => {
+        set({
+          danmakuConfig: {
+            password: shortUuid.generate(),
+            uuid: shortUuid.generate(),
+          },
+        });
+      },
+
+      // 获取合并的token
+      getMergedToken: () => {
+        const { uuid, password } = get().danmakuConfig;
+        return `${uuid}@${password}`;
+      },
     }),
     {
       name: THEME_STORAGE_KEY,
-      partialize: state => ({ theme: state.theme }),
+      partialize: state => ({
+        theme: state.theme,
+        danmakuConfig: state.danmakuConfig,
+      }),
       onRehydrateStorage: () => {
         // 当状态从存储中恢复后被调用
         return state => {

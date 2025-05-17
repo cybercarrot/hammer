@@ -12,45 +12,26 @@ import {
   Tooltip,
 } from '@radix-ui/themes';
 import { ReloadIcon, ClipboardCopyIcon } from '@radix-ui/react-icons';
-import shortUuid from 'short-uuid';
 import { ConfigProps, uploadCookies } from '../utils/cookies';
 import { WebviewTag } from 'electron';
 import { useToast } from '../context/ToastContext';
+import { useSettingStore } from '../store/settingStore';
 
 interface DanmakuViewerProps {
   url?: string;
 }
 
-// 本地存储键名
-const STORAGE_KEY = 'COOKIE_SYNC_SETTINGS';
-
-// 初始化配置或从localStorage加载
-const getInitialConfig = (): ConfigProps => {
-  try {
-    const savedConfig = localStorage.getItem(STORAGE_KEY);
-    if (savedConfig) {
-      return JSON.parse(savedConfig);
-    }
-  } catch (error) {
-    console.error('加载配置失败:', error);
-  }
-
-  // 默认配置
-  return {
-    password: shortUuid.generate(),
-    uuid: shortUuid.generate(),
-  };
-};
-
 const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.laplace.live/' }) => {
   const webviewRef = useRef<WebviewTag>(null);
-  const [configData, setConfigData] = useState<ConfigProps>(getInitialConfig());
   const [isLoading, setIsLoading] = useState(false);
   const [webviewLoading, setWebviewLoading] = useState(true);
   const { showToast } = useToast();
 
-  // 合并的token字符串
-  const mergedToken = `${configData.uuid}@${configData.password}`;
+  // 使用settingStore管理弹幕机配置
+  const { danmakuConfig, regenerateDanmakuIds, getMergedToken } = useSettingStore();
+
+  // 获取合并的token字符串
+  const mergedToken = getMergedToken();
 
   // 在新窗口中打开链接
   const openInNewWindow = () => {
@@ -115,6 +96,11 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
   const handleUploadCookies = async () => {
     setIsLoading(true);
     try {
+      const configData: ConfigProps = {
+        uuid: danmakuConfig.uuid,
+        password: danmakuConfig.password,
+      };
+
       console.log('开始上传Cookie数据, 配置:', configData);
 
       const result = await uploadCookies(configData);
@@ -138,11 +124,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   // 生成新的IDs
   const generateNewIds = () => {
-    setConfigData(prev => ({
-      ...prev,
-      uuid: shortUuid.generate(),
-      password: shortUuid.generate(),
-    }));
+    regenerateDanmakuIds();
   };
 
   // 打开开发者工具
@@ -211,15 +193,6 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       showToast('LAPLACE页面未加载完成', 'error');
     }
   };
-
-  useEffect(() => {
-    // 每次配置变更时自动保存
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(configData));
-    } catch (error) {
-      console.error('自动保存配置失败:', error);
-    }
-  }, [configData]);
 
   useEffect(() => {
     // 当webview加载完成后执行相关操作

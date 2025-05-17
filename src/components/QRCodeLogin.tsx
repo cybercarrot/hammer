@@ -3,7 +3,7 @@ import { Button, Dialog, Flex, Text, Box } from '@radix-ui/themes';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import QRCode from 'qrcode';
 import { BiliLoginService } from '../services/BiliLogin';
-import { useLoginStore } from '../store/loginStore';
+import { useUserStore } from '../store/userStore';
 
 interface QRCodeLoginProps {
   onLoginSuccess?: () => void;
@@ -11,7 +11,7 @@ interface QRCodeLoginProps {
 
 const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
   // 登录状态
-  const { isLoggedIn, setLoginState } = useLoginStore();
+  const { isLoggedIn, setLoginState } = useUserStore();
 
   // 对话框状态
   const [open, setOpen] = useState(false);
