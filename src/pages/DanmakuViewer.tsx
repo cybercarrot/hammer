@@ -1,5 +1,17 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Button, TextField, Card, Flex, Text, Spinner } from '@radix-ui/themes';
+import {
+  Button,
+  TextField,
+  Flex,
+  Text,
+  Spinner,
+  Callout,
+  Badge,
+  Separator,
+  IconButton,
+  Tooltip,
+} from '@radix-ui/themes';
+import { ReloadIcon, ClipboardCopyIcon } from '@radix-ui/react-icons';
 import shortUuid from 'short-uuid';
 import { ConfigProps, uploadCookies } from '../utils/cookies';
 import { WebviewTag } from 'electron';
@@ -39,6 +51,24 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   // 合并的token字符串
   const mergedToken = `${configData.uuid}@${configData.password}`;
+
+  // 在新窗口中打开链接
+  const openInNewWindow = () => {
+    try {
+      // 使用window.open()创建新窗口
+      const newWindow = window.open(url, '_blank', 'width=1280,height=720');
+      if (newWindow) {
+        newWindow.focus();
+        console.log('已在新窗口中打开:', url);
+      } else {
+        console.error('无法打开新窗口，可能被浏览器阻止');
+        showToast('无法打开新窗口', 'error');
+      }
+    } catch (err) {
+      console.error('打开新窗口失败:', err);
+      showToast('打开新窗口失败', 'error');
+    }
+  };
 
   // 设置token到webview中的输入框
   const setSyncToken = (token: string) => {
@@ -115,6 +145,73 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
     }));
   };
 
+  // 打开开发者工具
+  const openDevTools = () => {
+    const webview = webviewRef.current;
+    if (webview) {
+      webview.openDevTools();
+    }
+  };
+
+  // 复制到剪贴板
+  const copyToClipboard = () => {
+    try {
+      navigator.clipboard.writeText(mergedToken);
+      showToast('已复制密钥到剪贴板', 'success');
+    } catch (err) {
+      console.error('复制失败:', err);
+      showToast('复制失败，请手动复制', 'error');
+    }
+  };
+
+  // 复制OBS链接
+  const copyOBSLink = () => {
+    const webview = webviewRef.current;
+    if (webview) {
+      // 执行脚本在webview中查找id为roomUrl的input元素并获取其值
+      const scriptToExecute = `
+        (function() {
+          // 查找id为roomUrl的input元素
+          const roomUrlInput = document.getElementById('roomUrl');
+          
+          if (roomUrlInput) {
+            console.log('找到roomUrl输入框');
+            return roomUrlInput.value || '';
+          } else {
+            console.error('未找到roomUrl输入框');
+            return null;
+          }
+        })();
+      `;
+
+      webview
+        .executeJavaScript(scriptToExecute)
+        .then(result => {
+          if (result) {
+            // 复制链接到剪贴板
+            navigator.clipboard
+              .writeText(result)
+              .then(() => {
+                console.log('OBS链接已复制:', result);
+                showToast('OBS 链接已复制到剪贴板', 'success');
+              })
+              .catch(err => {
+                console.error('复制到剪贴板失败:', err);
+                showToast('复制到剪贴板失败', 'error');
+              });
+          } else {
+            showToast('未找到OBS链接，请先在 LAPLACE 中配置直播间', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('获取OBS链接失败:', err);
+          showToast('获取OBS链接失败', 'error');
+        });
+    } else {
+      showToast('LAPLACE页面未加载完成', 'error');
+    }
+  };
+
   useEffect(() => {
     // 每次配置变更时自动保存
     try {
@@ -126,18 +223,15 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   useEffect(() => {
     // 当webview加载完成后执行相关操作
+    const webview = webviewRef.current;
+
     const handleWebviewLoad = () => {
       console.log('webview加载完成');
       setWebviewLoading(false);
-      if (process.env.NODE_ENV === 'development') {
-        webview.openDevTools();
-      }
     };
 
-    const webview = webviewRef.current;
     if (webview) {
       webview.addEventListener('did-finish-load', handleWebviewLoad);
-
       return () => {
         webview.removeEventListener('did-finish-load', handleWebviewLoad);
       };
@@ -146,32 +240,96 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* 登录态同步区域 */}
-      <Card className="mb-4 p-3">
-        <Flex direction="row" gap="2" align="center">
-          <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly className="flex-1" />
-          {/* 先隐藏设置按钮节省空间，后续看设计可以展示 */}
-          <Button onClick={() => setTokenToDanmaku(mergedToken)} disabled={isLoading}>
-            设置到弹幕机
-          </Button>
+      {/* 用户提示信息 */}
+      <Callout.Root color="blue" size="1" className="mb-3 !p-2">
+        <Callout.Text>
+          初次打开先
+          <Badge color="indigo" variant="solid">
+            关联账号
+          </Badge>
+          ，成功后点击 LAPLACE 中的<Badge color="gray">进阶</Badge>标签，然后点击
+          <Badge color="indigo" variant="solid">
+            同步登录状态
+          </Badge>
+          ，即可自动完成同步与密钥设置，接下来可以在 LAPLACE
+          中进行直播间与弹幕的配置。每次修改完点击
+          <Badge color="green">复制 OBS 链接</Badge>，再粘贴到 OBS 中。
+        </Callout.Text>
+      </Callout.Root>
+
+      {/* 调试模块 - 仅在开发环境显示 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4">
+          <Flex align="center" className="mb-2">
+            <Text size="1" color="gray" weight="medium">
+              调试
+            </Text>
+            <Separator orientation="horizontal" className="flex-1 ml-2" />
+          </Flex>
+          <Flex gap="2">
+            <Button onClick={() => setTokenToDanmaku(mergedToken)} variant="soft" color="red">
+              设置到弹幕机
+            </Button>
+            <Button onClick={openDevTools} variant="soft" color="red">
+              打开控制台
+            </Button>
+          </Flex>
+        </div>
+      )}
+
+      {/* 操作模块 */}
+      <div className="mb-4">
+        <Flex align="center" className="mb-2">
+          <Text size="1" color="gray" weight="medium">
+            操作
+          </Text>
+          <Separator orientation="horizontal" className="flex-1 ml-2" />
+        </Flex>
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-shrink-0" style={{ minWidth: '200px' }}>
+            <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly>
+              <TextField.Slot side="right">
+                <Tooltip content="复制到剪贴板">
+                  <IconButton size="1" variant="ghost" color="blue" onClick={copyToClipboard}>
+                    <ClipboardCopyIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip content="重新生成密钥">
+                  <IconButton size="1" variant="ghost" color="red" onClick={generateNewIds}>
+                    <ReloadIcon />
+                  </IconButton>
+                </Tooltip>
+              </TextField.Slot>
+            </TextField.Root>
+          </div>
           <Button onClick={handleUploadCookies} variant="solid" disabled={isLoading}>
             <Spinner size="1" loading={isLoading} />
             {isLoading ? '同步中' : '同步登录状态'}
           </Button>
-          <Button variant="soft" color="red" onClick={generateNewIds}>
-            换密钥
+          <Button variant="soft" color="green" onClick={copyOBSLink}>
+            复制 OBS 链接
           </Button>
-        </Flex>
-      </Card>
+          <Button variant="soft" onClick={openInNewWindow}>
+            新窗口打开 LAPLACE
+          </Button>
+        </div>
+      </div>
 
-      <div className="flex-1 flex flex-col">
-        {/* 主弹幕显示区域 */}
-        <div className="flex-1 border border-gray-300 rounded-lg overflow-hidden relative">
-          <webview ref={webviewRef} src={url} style={{ minHeight: '800px' }} />
+      {/* LAPLACE模块 */}
+      <div className="flex-1">
+        <Flex align="center" className="mb-2">
+          <Text size="1" color="gray" weight="medium">
+            LAPLACE
+          </Text>
+          <Separator orientation="horizontal" className="flex-1 ml-2" />
+        </Flex>
+        <div className="border border-gray-300 rounded-lg overflow-hidden relative">
+          {/* @ts-expect-error 官方类型定义错误  */}
+          <webview ref={webviewRef} src={url} style={{ minHeight: '500px' }} allowpopups="true" />
           {webviewLoading && (
             <div className="absolute top-2 left-2 px-3 py-2 flex items-center gap-2">
               <Spinner size="1" />
-              <span>加载中</span>
+              <span>加载 LAPLACE 中...</span>
             </div>
           )}
         </div>

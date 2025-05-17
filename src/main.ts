@@ -31,8 +31,8 @@ const createWindow = () => {
 
   // 允许跨域访问
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    // 根据请求的URL设置适当的Origin
-    if (details.url.includes('bilibili.com')) {
+    // 将自身页面的来源 hack 为 bilibili.com
+    if (details.referrer.includes('http://localhost')) {
       details.requestHeaders['Origin'] = 'https://www.bilibili.com';
       details.requestHeaders['Referer'] = 'https://www.bilibili.com';
     }

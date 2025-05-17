@@ -248,9 +248,7 @@ const QRCodeLogin: React.FC<QRCodeLoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <>
-      <Button onClick={() => handleOpenChange(true)} variant="soft" color="indigo">
-        关联账号
-      </Button>
+      <Button onClick={() => handleOpenChange(true)}>关联账号</Button>
 
       <Dialog.Root open={open} onOpenChange={handleOpenChange}>
         <Dialog.Content style={{ maxWidth: 350 }}>

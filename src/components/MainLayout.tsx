@@ -5,7 +5,7 @@ import ControlPanel from '../pages/ControlPanel';
 import Settings from '../pages/Settings';
 import ThemeSwitch from './ThemeSwitch';
 import UserProfileSection from './UserProfileSection';
-import { Badge, Flex, Tabs, Box, Text, Container } from '@radix-ui/themes';
+import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
 import packageJson from '../../package.json';
 
 const MainLayout: React.FC = () => {
@@ -17,7 +17,7 @@ const MainLayout: React.FC = () => {
           <Flex justify="between" align="center">
             <Box>
               <Flex align="baseline" gap="2">
-                <h1 className="text-xl font-bold">大锤</h1>
+                <Heading color="crimson">大锤</Heading>
                 <Text size="2" color="gray">
                   bilibili直播助手
                 </Text>
@@ -26,7 +26,7 @@ const MainLayout: React.FC = () => {
 
             {/* 标签切换放在顶部栏中间 */}
             <Box style={{ position: 'relative', top: '8px' }}>
-              <Tabs.List color="blue" size="2">
+              <Tabs.List color="crimson" size="2">
                 <Tabs.Trigger value="danmaku">弹幕机</Tabs.Trigger>
                 <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
@@ -69,10 +69,10 @@ const MainLayout: React.FC = () => {
         <Box py="2" px="4" className="shadow-sm border-t" style={{ borderColor: 'var(--gray-5)' }}>
           <Flex justify="end">
             <Flex gap="2" align="center">
-              <Badge variant="solid" color="blue">
+              <Badge variant="solid" color="jade">
                 v{packageJson.version}
               </Badge>
-              <Badge variant="solid" color="pink">
+              <Badge variant="solid" color="crimson">
                 by 阿酒
               </Badge>
             </Flex>

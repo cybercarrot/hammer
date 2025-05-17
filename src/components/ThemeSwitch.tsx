@@ -1,46 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { IconButton } from '@radix-ui/themes';
 import { SunIcon, MoonIcon } from '@radix-ui/react-icons';
+import { useSettingStore } from '../store/settingStore';
 
 interface ThemeSwitchProps {
   className?: string;
 }
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ className = '' }) => {
-  // 使用state跟踪当前主题
-  const [isDark, setIsDark] = useState(() => {
-    return document.documentElement.classList.contains('dark-theme');
-  });
-
-  // 切换主题
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    if (html.classList.contains('dark-theme')) {
-      html.classList.remove('dark-theme');
-      setIsDark(false);
-    } else {
-      html.classList.add('dark-theme');
-      setIsDark(true);
-    }
-  };
-
-  // 监听主题变化（以防其他地方也会改变主题）
-  useEffect(() => {
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-          setIsDark(document.documentElement.classList.contains('dark-theme'));
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+  const { theme, toggleTheme } = useSettingStore();
+  const isDark = theme === 'dark';
 
   return (
     <IconButton
