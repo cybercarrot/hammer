@@ -2,6 +2,7 @@ import React from 'react';
 import MainLayout from './components/MainLayout';
 import { Theme } from '@radix-ui/themes';
 import './styles/theme-config.css';
+import { ToastProvider } from './context/ToastContext';
 
 const App: React.FC = () => {
   // 检测是否为暗黑模式
@@ -33,7 +34,9 @@ const App: React.FC = () => {
 
   return (
     <Theme appearance={themeAppearance} className="radix-themes">
-      <MainLayout />
+      <ToastProvider>
+        <MainLayout />
+      </ToastProvider>
     </Theme>
   );
 };
