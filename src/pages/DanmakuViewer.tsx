@@ -285,16 +285,22 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
               </TextField.Slot>
             </TextField.Root>
           </div>
-          <Button onClick={handleUploadCookies} variant="solid" disabled={isLoading}>
-            <Spinner size="1" loading={isLoading} />
-            {isLoading ? '同步中' : '同步登录状态'}
-          </Button>
-          <Button variant="soft" color="green" onClick={copyOBSLink}>
-            复制 OBS 链接
-          </Button>
-          <Button variant="soft" onClick={openInNewWindow}>
-            新窗口打开 LAPLACE
-          </Button>
+          <Tooltip content="同步登录状态后，自动在 LAPLACE 中完成配置">
+            <Button onClick={handleUploadCookies} variant="solid" disabled={isLoading}>
+              <Spinner size="1" loading={isLoading} />
+              {isLoading ? '同步中' : '同步登录状态'}
+            </Button>
+          </Tooltip>
+          <Tooltip content="新开窗口并放大，更方便配置">
+            <Button variant="soft" onClick={openInNewWindow}>
+              新窗口打开 LAPLACE
+            </Button>
+          </Tooltip>
+          <Tooltip content="与 LAPLACE 页面中的复制作用相同">
+            <Button variant="soft" color="green" onClick={copyOBSLink}>
+              复制 OBS 链接
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
