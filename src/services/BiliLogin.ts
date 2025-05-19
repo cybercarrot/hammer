@@ -125,6 +125,27 @@ export interface UserInfoResponse {
   name_render: any;
 }
 
+// 直播间信息接口
+export interface LiveRoomInfoResponse {
+  code: number;
+  message: string;
+  data: {
+    room_id: number;
+    uid: number;
+    uname: string;
+    face: string;
+    cover: string;
+    title: string;
+    area_name: string;
+    parent_area_name: string;
+    keyframe: string;
+    is_sp: number;
+    special_type: number;
+    broadcast_type: number;
+    online: number;
+  };
+}
+
 export class BiliLoginService {
   // 生成QR码的API
   private static readonly QR_GENERATE_URL =
@@ -134,6 +155,8 @@ export class BiliLoginService {
     'https://passport.bilibili.com/x/passport-login/web/qrcode/poll';
   // 获取用户信息的API
   private static readonly USER_INFO_URL = 'https://api.bilibili.com/x/web-interface/nav';
+  private static readonly LIVE_ROOM_INFO_URL =
+    'https://api.live.bilibili.com/live_user/v1/Master/info';
 
   /**
    * 获取QR码数据
@@ -185,6 +208,28 @@ export class BiliLoginService {
   }
 
   /**
+   * 获取直播间信息
+   * @param uid 用户ID
+   * @returns 直播间信息
+   */
+  public static async getLiveRoomInfo(uid: number): Promise<LiveRoomInfoResponse> {
+    try {
+      const config = { withCredentials: true };
+      const response = await axios.get(`${this.LIVE_ROOM_INFO_URL}?uid=${uid}`, config);
+      const data = response.data;
+
+      if (data.code === 0 && data.data) {
+        return data;
+      } else {
+        throw new Error(`获取直播间信息失败: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('获取直播间信息失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 获取用户信息
    * @returns 用户信息
    */
@@ -204,7 +249,25 @@ export class BiliLoginService {
           // 在静态方法中，我们不能直接使用hook
           // 但我们可以获取store状态和操作
           const userStore = useUserStore.getState();
-          userStore.setLoginState(true, userInfo.uname, userInfo.mid.toString(), userInfo.face);
+
+          // 获取直播间信息
+          try {
+            const liveRoomInfo = await this.getLiveRoomInfo(userInfo.mid);
+            if (liveRoomInfo.code === 0 && liveRoomInfo.data) {
+              userStore.setLoginState(
+                true,
+                userInfo.uname,
+                userInfo.mid,
+                userInfo.face,
+                liveRoomInfo.data.room_id
+              );
+            } else {
+              userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
+            }
+          } catch (error) {
+            console.error('获取直播间信息失败，仅更新用户信息:', error);
+            userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
+          }
         }
 
         return userInfo;

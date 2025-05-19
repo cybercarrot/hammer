@@ -137,8 +137,8 @@ const QRCodeLogin: React.FC = () => {
       const userInfo = await BiliLoginService.getUserInfo();
 
       if (userInfo && userInfo.isLogin) {
-        // 更新登录状态
-        setLoginState(true, userInfo.uname, userInfo.mid.toString(), userInfo.face);
+        // 登录成功，更新状态
+        setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
 
         // 关闭对话框
         setOpen(false);

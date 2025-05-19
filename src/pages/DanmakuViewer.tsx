@@ -314,7 +314,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
         </Flex>
         <div className="border border-gray-300 rounded-lg overflow-hidden relative">
           {/* @ts-expect-error 官方类型定义错误  */}
-          <webview ref={webviewRef} src={url} style={{ minHeight: '500px' }} allowpopups="true" />
+          <webview ref={webviewRef} src={url} className="min-h-[500px]" allowpopups="true" />
           {webviewLoading && (
             <div className="absolute top-2 left-2 px-3 py-2 flex items-center gap-2">
               <Spinner size="1" />

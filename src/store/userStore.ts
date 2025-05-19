@@ -9,11 +9,19 @@ interface UserState {
   // 用户名
   username: string;
   // 用户ID
-  userId: string;
+  userId: number;
   // 用户头像
   avatar: string;
+  // 直播间ID
+  roomId: number;
   // 设置登录状态
-  setLoginState: (isLoggedIn: boolean, username?: string, userId?: string, avatar?: string) => void;
+  setLoginState: (
+    isLoggedIn: boolean,
+    username?: string,
+    userId?: number,
+    avatar?: string,
+    roomId?: number
+  ) => void;
   // 清除登录状态
   clearLoginState: () => void;
   // 退出登录
@@ -30,23 +38,26 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       isLoggedIn: false,
       username: '',
-      userId: '',
+      userId: 0,
       avatar: '',
+      roomId: 0,
 
-      setLoginState: (isLoggedIn, username = '', userId = '', avatar = '') =>
+      setLoginState: (isLoggedIn, username = '', userId = 0, avatar = '', roomId = 0) =>
         set({
           isLoggedIn,
           username,
           userId,
           avatar,
+          roomId,
         }),
 
       clearLoginState: () =>
         set({
           isLoggedIn: false,
           username: '',
-          userId: '',
+          userId: 0,
           avatar: '',
+          roomId: 0,
         }),
 
       logout: () => {
@@ -59,8 +70,9 @@ export const useUserStore = create<UserState>()(
         set({
           isLoggedIn: false,
           username: '',
-          userId: '',
+          userId: 0,
           avatar: '',
+          roomId: 0,
         });
       },
 
@@ -75,7 +87,7 @@ export const useUserStore = create<UserState>()(
             set({
               isLoggedIn: true,
               username: userInfo.uname,
-              userId: userInfo.mid.toString(),
+              userId: userInfo.mid,
               avatar: userInfo.face,
             });
             return true;
@@ -84,7 +96,7 @@ export const useUserStore = create<UserState>()(
             set({
               isLoggedIn: false,
               username: '',
-              userId: '',
+              userId: 0,
               avatar: '',
             });
             return false;
@@ -95,7 +107,7 @@ export const useUserStore = create<UserState>()(
           set({
             isLoggedIn: false,
             username: '',
-            userId: '',
+            userId: 0,
             avatar: '',
           });
           return false;
