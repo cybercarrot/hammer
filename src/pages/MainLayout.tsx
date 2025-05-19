@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import DanmakuViewer from '../pages/DanmakuViewer';
-import SongRequest from '../pages/SongRequest';
-import ControlPanel from '../pages/ControlPanel';
-import Settings from '../pages/Settings';
-import ThemeSwitch from './ThemeSwitch';
-import UserProfile from './UserProfile';
+import DanmakuViewer from './DanmakuViewer';
+import SongRequest from './SongRequest';
+import ControlPanel from './ControlPanel';
+import Settings from './Settings';
+import ThemeSwitch from '../components/ThemeSwitch';
+import UserProfile from '../components/UserProfile';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
 import packageJson from '../../package.json';
 import { useUserStore } from '../store/userStore';
