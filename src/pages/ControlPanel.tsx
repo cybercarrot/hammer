@@ -49,7 +49,7 @@ const ControlPanel: React.FC = () => {
     <div className="w-full h-full flex flex-col">
       {/* 调试模块 - 仅在开发环境显示 */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="mb-4">
+        <div className="flex-shrink-0 mb-4">
           <Flex align="center" className="mb-2">
             <Text size="1" color="gray" weight="medium">
               调试
@@ -64,11 +64,12 @@ const ControlPanel: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 border border-gray-300 rounded-lg overflow-hidden relative">
+      <div className="border border-gray-300 rounded-lg overflow-hidden relative flex flex-1 flex-col">
         <webview
           ref={webviewRef}
           src={`https://chat.laplace.live/dashboard/${roomId}`}
           className="w-full h-full"
+          style={{ flex: '1 1 auto', minHeight: '0' }}
           // @ts-expect-error 官方类型定义有误
           allowpopups="true"
         />

@@ -305,16 +305,22 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       </div>
 
       {/* LAPLACE模块 */}
-      <div className="flex-1">
+      <div className="flex flex-1 flex-col">
         <Flex align="center" className="mb-2">
           <Text size="1" color="gray" weight="medium">
             LAPLACE
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />
         </Flex>
-        <div className="border border-gray-300 rounded-lg overflow-hidden relative">
-          {/* @ts-expect-error 官方类型定义错误  */}
-          <webview ref={webviewRef} src={url} className="min-h-[500px]" allowpopups="true" />
+        <div className="border border-gray-300 rounded-lg overflow-hidden relative flex flex-1 flex-col">
+          <webview
+            ref={webviewRef}
+            src={url}
+            className="w-full h-full"
+            style={{ flex: '1 1 auto', minHeight: '0' }}
+            // @ts-expect-error 官方类型定义有误
+            allowpopups="true"
+          />
           {webviewLoading && (
             <div className="absolute top-2 left-2 px-3 py-2 flex items-center gap-2">
               <Spinner size="1" />
