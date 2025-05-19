@@ -44,8 +44,8 @@ const MainLayout: React.FC = () => {
             <Box style={{ position: 'relative', top: '8px' }}>
               <Tabs.List color="crimson" size="2">
                 <Tabs.Trigger value="danmaku">弹幕机</Tabs.Trigger>
-                <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
+                <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
                 <Tabs.Trigger value="settings">设置</Tabs.Trigger>
               </Tabs.List>
             </Box>
@@ -64,14 +64,14 @@ const MainLayout: React.FC = () => {
               <DanmakuViewer />
             </Container>
           </Tabs.Content>
-          <Tabs.Content value="song" className="h-full">
-            <Container size="4" height="100%" className="h-full">
-              <SongRequest />
-            </Container>
-          </Tabs.Content>
           <Tabs.Content value="control" className="h-full">
             <Container size="4" height="100%" className="h-full">
               <ControlPanel />
+            </Container>
+          </Tabs.Content>
+          <Tabs.Content value="song" className="h-full">
+            <Container size="4" height="100%" className="h-full">
+              <SongRequest />
             </Container>
           </Tabs.Content>
           <Tabs.Content value="settings" className="h-full">
