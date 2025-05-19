@@ -4,7 +4,7 @@ import SongRequest from '../pages/SongRequest';
 import ControlPanel from '../pages/ControlPanel';
 import Settings from '../pages/Settings';
 import ThemeSwitch from './ThemeSwitch';
-import UserProfileSection from './UserProfileSection';
+import UserProfile from './UserProfile';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
 import packageJson from '../../package.json';
 import { useUserStore } from '../store/userStore';
@@ -51,7 +51,7 @@ const MainLayout: React.FC = () => {
             </Box>
 
             <Flex gap="4" align="center">
-              <UserProfileSection />
+              <UserProfile />
               <ThemeSwitch />
             </Flex>
           </Flex>

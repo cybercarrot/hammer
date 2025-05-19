@@ -230,12 +230,11 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
           <Badge color="indigo" variant="solid">
             关联账号
           </Badge>
-          ，成功后点击 LAPLACE 中的<Badge color="gray">进阶</Badge>标签，然后点击
+          ，成功后打开 LAPLACE 中的<Badge color="gray">进阶</Badge>标签，打开后点击
           <Badge color="indigo" variant="solid">
             同步登录状态
           </Badge>
-          ，即可自动完成同步与密钥设置，接下来可以在 LAPLACE
-          中进行直播间与弹幕的配置。每次修改完点击
+          ，即可自动完成同步与密钥设置。接下来在 LAPLACE 中进行直播间与弹幕的配置，每次修改完点击
           <Badge color="green">复制 OBS 链接</Badge>，再粘贴到 OBS 中。
         </Callout.Text>
       </Callout.Root>

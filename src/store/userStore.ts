@@ -9,18 +9,18 @@ interface UserState {
   // 用户名
   username: string;
   // 用户ID
-  userId: number;
+  userId: number | null;
   // 用户头像
   avatar: string;
   // 直播间ID
-  roomId: number;
+  roomId: number | null;
   // 设置登录状态
   setLoginState: (
     isLoggedIn: boolean,
     username?: string,
-    userId?: number,
+    userId?: number | null,
     avatar?: string,
-    roomId?: number
+    roomId?: number | null
   ) => void;
   // 清除登录状态
   clearLoginState: () => void;
@@ -38,11 +38,11 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       isLoggedIn: false,
       username: '',
-      userId: 0,
+      userId: null,
       avatar: '',
-      roomId: 0,
+      roomId: null,
 
-      setLoginState: (isLoggedIn, username = '', userId = 0, avatar = '', roomId = 0) =>
+      setLoginState: (isLoggedIn, username = '', userId = null, avatar = '', roomId = null) =>
         set({
           isLoggedIn,
           username,
@@ -55,9 +55,9 @@ export const useUserStore = create<UserState>()(
         set({
           isLoggedIn: false,
           username: '',
-          userId: 0,
+          userId: null,
           avatar: '',
-          roomId: 0,
+          roomId: null,
         }),
 
       logout: () => {
@@ -70,9 +70,9 @@ export const useUserStore = create<UserState>()(
         set({
           isLoggedIn: false,
           username: '',
-          userId: 0,
+          userId: null,
           avatar: '',
-          roomId: 0,
+          roomId: null,
         });
       },
 
@@ -96,8 +96,9 @@ export const useUserStore = create<UserState>()(
             set({
               isLoggedIn: false,
               username: '',
-              userId: 0,
+              userId: null,
               avatar: '',
+              roomId: null,
             });
             return false;
           }
@@ -107,8 +108,9 @@ export const useUserStore = create<UserState>()(
           set({
             isLoggedIn: false,
             username: '',
-            userId: 0,
+            userId: null,
             avatar: '',
+            roomId: null,
           });
           return false;
         }
@@ -122,6 +124,7 @@ export const useUserStore = create<UserState>()(
         username: state.username,
         userId: state.userId,
         avatar: state.avatar,
+        roomId: state.roomId,
       }),
     }
   )

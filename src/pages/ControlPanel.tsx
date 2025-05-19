@@ -38,7 +38,7 @@ const ControlPanel: React.FC = () => {
       <div className="w-full h-full flex flex-col">
         <div className="flex-1 border border-gray-300 rounded-lg p-4">
           <div className="text-center text-gray-500 my-8">
-            <p>请先登录并获取直播间信息</p>
+            <p>请先关联账号</p>
           </div>
         </div>
       </div>
