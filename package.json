@@ -1,8 +1,8 @@
 {
   "name": "hammer",
-  "productName": "hammer",
+  "productName": "锤子",
   "version": "0.1.0",
-  "description": "My Electron application description",
+  "description": "bilibili直播助手",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

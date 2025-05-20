@@ -33,7 +33,7 @@ const MainLayout: React.FC = () => {
           <Flex justify="between" align="center">
             <Box>
               <Flex align="baseline" gap="2">
-                <Heading color="crimson">大锤</Heading>
+                <Heading color="crimson">锤子</Heading>
                 <Text size="2" color="gray">
                   bilibili直播助手
                 </Text>

@@ -1,4 +1,13 @@
-import { app, BrowserWindow, ipcMain, session, Menu, globalShortcut } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  session,
+  Menu,
+  globalShortcut,
+  Tray,
+  nativeImage,
+} from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './main/cookies';
@@ -11,6 +20,30 @@ if (started) {
 
 // 存储当前主窗口引用
 let mainWindow: BrowserWindow | null = null;
+// 创建托盘变量
+let tray: Tray | null = null;
+// 图标路径
+const iconPath = app.isPackaged
+  ? process.resourcesPath + '/icon.ico'
+  : path.join(__dirname, '../../assets/icon.ico');
+// 加载图标
+const icon = nativeImage.createFromPath(iconPath);
+
+// 直接退出应用的函数
+const quitApp = () => {
+  console.log('quitApp');
+  if (mainWindow) {
+    mainWindow.removeAllListeners('close');
+    mainWindow.close();
+    mainWindow = null;
+  }
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+  globalShortcut.unregisterAll();
+  app.quit();
+};
 
 const createWindow = () => {
   // 加载窗口状态管理器
@@ -132,9 +165,47 @@ const createWindow = () => {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
-  // 监听窗口关闭事件，释放窗口对象
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  // 监听窗口关闭事件，直接最小化到托盘
+  mainWindow.on('close', event => {
+    if (mainWindow) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+};
+
+// 创建托盘图标
+const createTray = () => {
+  tray = new Tray(icon);
+  tray.setToolTip('锤子');
+
+  // 创建托盘菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+        } else {
+          createWindow();
+        }
+      },
+    },
+    {
+      label: '退出程序',
+      click: () => quitApp(),
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  // 点击托盘图标显示窗口
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+    } else {
+      createWindow();
+    }
   });
 };
 
@@ -146,6 +217,7 @@ app.on('ready', () => {
   Menu.setApplicationMenu(null);
 
   createWindow();
+  createTray();
 
   // 注册全局快捷键
   // 后退
@@ -188,7 +260,8 @@ app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    // 不直接退出应用，保持托盘运行
+    // app.quit(); - 注释掉这行
   }
 });
 
@@ -217,8 +290,3 @@ ipcMain.on('app:logout', async () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
-
-// 在应用退出前注销所有快捷键
-app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
-});
