@@ -132,6 +132,9 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
+  // 全局移除菜单栏
+  Menu.setApplicationMenu(null);
+
   createWindow();
   // 设置Cookie处理程序
   setupCookieHandlers();
