@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron';
+import { app, BrowserWindow, ipcMain, session, Menu, MenuItem } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './main/cookies';
@@ -27,6 +27,47 @@ const createWindow = () => {
       // 禁用同源策略，允许跨域请求
       webSecurity: false,
     },
+  });
+
+  // 创建右键菜单函数
+  const createContextMenu = (webContents: Electron.WebContents) => {
+    return Menu.buildFromTemplate([
+      {
+        label: '后退',
+        click: () => {
+          const navigationHistory = webContents.navigationHistory;
+          if (navigationHistory.canGoBack()) {
+            navigationHistory.goBack();
+          }
+        },
+        enabled: webContents.navigationHistory.canGoBack(),
+      },
+      {
+        label: '刷新',
+        click: () => {
+          webContents.reload();
+        },
+      },
+      { type: 'separator' },
+      {
+        label: '切换开发工具',
+        click: () => {
+          webContents.toggleDevTools();
+        },
+      },
+    ]);
+  };
+
+  // 监听右键点击事件，显示上下文菜单
+  mainWindow.webContents.on('context-menu', event => {
+    createContextMenu(mainWindow.webContents).popup();
+  });
+
+  // 为所有新建的webContents添加右键菜单
+  app.on('web-contents-created', (_, webContents) => {
+    webContents.on('context-menu', () => {
+      createContextMenu(webContents).popup();
+    });
   });
 
   // 允许跨域访问
