@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, session, Menu, MenuItem, globalShortcut } from 'electron';
+import { app, BrowserWindow, ipcMain, session, Menu, globalShortcut } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './main/cookies';
+import windowStateKeeper from 'electron-window-state';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -12,10 +13,18 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
+  // 加载窗口状态管理器
+  const windowState = windowStateKeeper({
+    defaultWidth: 1920,
+    defaultHeight: 1080,
+  });
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       // 启用webview的支持
@@ -28,6 +37,9 @@ const createWindow = () => {
       webSecurity: false,
     },
   });
+
+  // 让窗口状态管理器监视窗口（自动保存和恢复窗口位置和大小）
+  windowState.manage(mainWindow);
 
   // 创建右键菜单函数
   const createContextMenu = (webContents: Electron.WebContents) => {
