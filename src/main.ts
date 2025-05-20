@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session, Menu, MenuItem } from 'electron';
+import { app, BrowserWindow, ipcMain, session, Menu, MenuItem, globalShortcut } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './main/cookies';
@@ -34,6 +34,7 @@ const createWindow = () => {
     return Menu.buildFromTemplate([
       {
         label: '后退',
+        accelerator: 'Alt+Left',
         click: () => {
           const navigationHistory = webContents.navigationHistory;
           if (navigationHistory.canGoBack()) {
@@ -44,6 +45,7 @@ const createWindow = () => {
       },
       {
         label: '刷新',
+        accelerator: 'F5',
         click: () => {
           webContents.reload();
         },
@@ -51,6 +53,7 @@ const createWindow = () => {
       { type: 'separator' },
       {
         label: '切换开发工具',
+        accelerator: 'F12',
         click: () => {
           webContents.toggleDevTools();
         },
@@ -136,6 +139,35 @@ app.on('ready', () => {
   Menu.setApplicationMenu(null);
 
   createWindow();
+
+  // 注册全局快捷键
+  // 后退
+  globalShortcut.register('Alt+Left', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      const history = win.webContents.navigationHistory;
+      if (history.canGoBack()) {
+        history.goBack();
+      }
+    }
+  });
+
+  // 刷新
+  globalShortcut.register('F5', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      win.webContents.reload();
+    }
+  });
+
+  // 开发者工具
+  globalShortcut.register('F12', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      win.webContents.toggleDevTools();
+    }
+  });
+
   // 设置Cookie处理程序
   setupCookieHandlers();
 });
@@ -178,3 +210,8 @@ ipcMain.on('app:logout', async () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+// 在应用退出前注销所有快捷键
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
