@@ -132,17 +132,9 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
     }
   };
 
-  // 生成新的IDs
+  // 重新生成IDs
   const generateNewIds = () => {
     regenerateDanmakuIds();
-  };
-
-  // 打开开发者工具
-  const openDevTools = () => {
-    const webview = webviewRef.current;
-    if (webview) {
-      webview.openDevTools();
-    }
   };
 
   // 复制到剪贴板
@@ -239,25 +231,20 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
         </Callout.Text>
       </Callout.Root>
 
-      {/* 调试模块 - 仅在开发环境显示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mb-4">
-          <Flex align="center" className="mb-2">
-            <Text size="1" color="gray" weight="medium">
-              调试
-            </Text>
-            <Separator orientation="horizontal" className="flex-1 ml-2" />
-          </Flex>
-          <Flex gap="2">
-            <Button onClick={() => setTokenToDanmaku(mergedToken)} variant="soft" color="red">
-              设置到弹幕机
-            </Button>
-            <Button onClick={openDevTools} variant="soft" color="red">
-              打开控制台
-            </Button>
-          </Flex>
-        </div>
-      )}
+      {/* 设置按钮 */}
+      <div className="mb-4">
+        <Flex align="center" className="mb-2">
+          <Text size="1" color="gray" weight="medium">
+            调试
+          </Text>
+          <Separator orientation="horizontal" className="flex-1 ml-2" />
+        </Flex>
+        <Flex gap="2">
+          <Button onClick={() => setTokenToDanmaku(mergedToken)} variant="soft" color="red">
+            设置到弹幕机
+          </Button>
+        </Flex>
+      </div>
 
       {/* 操作模块 */}
       <div className="mb-4">

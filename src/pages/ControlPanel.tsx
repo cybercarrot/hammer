@@ -8,14 +8,6 @@ const ControlPanel: React.FC = () => {
   const webviewRef = useRef<WebviewTag>(null);
   const [webviewLoading, setWebviewLoading] = useState(true);
 
-  // 打开开发者工具
-  const openDevTools = () => {
-    const webview = webviewRef.current;
-    if (webview) {
-      webview.openDevTools();
-    }
-  };
-
   useEffect(() => {
     // 当webview加载完成后执行相关操作
     const webview = webviewRef.current;
@@ -47,23 +39,6 @@ const ControlPanel: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* 调试模块 - 仅在开发环境显示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="flex-shrink-0 mb-4">
-          <Flex align="center" className="mb-2">
-            <Text size="1" color="gray" weight="medium">
-              调试
-            </Text>
-            <Separator orientation="horizontal" className="flex-1 ml-2" />
-          </Flex>
-          <Flex gap="2">
-            <Button onClick={openDevTools} variant="soft" color="red">
-              打开控制台
-            </Button>
-          </Flex>
-        </div>
-      )}
-
       <div className="border border-gray-300 rounded-lg overflow-hidden relative flex flex-1 flex-col">
         <webview
           ref={webviewRef}

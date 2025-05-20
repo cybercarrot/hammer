@@ -132,11 +132,6 @@ const createWindow = () => {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
-  // Open the DevTools in development mode
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
-
   // 监听窗口关闭事件，释放窗口对象
   mainWindow.on('closed', () => {
     mainWindow = null;
