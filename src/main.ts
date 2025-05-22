@@ -251,10 +251,6 @@ app.on('ready', () => {
   setupCookieHandlers();
 });
 
-// 禁用安全警告
-app.commandLine.appendSwitch('disable-site-isolation-trials');
-app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
-
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
