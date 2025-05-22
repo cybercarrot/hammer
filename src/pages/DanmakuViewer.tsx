@@ -27,6 +27,8 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
   const [isLoading, setIsLoading] = useState(false);
   const [webviewLoading, setWebviewLoading] = useState(true);
   const { showToast } = useToast();
+  const { roomId, userId, username } = useUserStore();
+  const { theme } = useSettingStore();
 
   // 使用settingStore管理弹幕机配置
   const { danmakuConfig, regenerateDanmakuIds, getMergedToken } = useSettingStore();
@@ -97,7 +99,125 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
   };
 
   // 同步cookie
-  const handleUploadCookies = async () => {
+  // const handleUploadCookies = async () => {
+  //   // 检查用户是否已登录
+  //   if (!isLoggedIn) {
+  //     showToast('请先关联账号', 'error');
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const configData: ConfigProps = {
+  //       uuid: danmakuConfig.uuid,
+  //       password: danmakuConfig.password,
+  //     };
+
+  //     console.log('开始上传Cookie数据, 配置:', configData);
+
+  //     const result = await uploadCookies(configData);
+
+  //     console.log('上传结果:', result);
+
+  //     showToast(result.message, result.success ? 'success' : 'error');
+
+  //     // 如果同步成功，则设置token到弹幕查看器
+  //     if (result.success) {
+  //       console.log('Cookie同步成功');
+  //     }
+  //   } catch (error) {
+  //     console.error('上传过程中出错:', error);
+  //     showToast(`上传失败: ${error}`, 'error');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // 一键设置
+  const setOptions = () => {
+    const webview = webviewRef.current;
+    if (!webview) {
+      showToast('LAPLACE页面未加载完成', 'error');
+      return;
+    }
+
+    // 执行脚本获取localStorage中的配置并修改
+    const scriptToExecute = `
+      (function() {
+        try {
+          // 获取localStorage中的配置
+          const optionsStr = localStorage.getItem('laplaceChatOptions_v4');
+          if (!optionsStr) {
+            return { success: false, message: '未找到LAPLACE配置' };
+          }
+
+          // 解析配置
+          const options = JSON.parse(optionsStr);
+          
+          // 修改roomIds
+          options.json.roomIds = ['${roomId}'];
+          
+          // 修改colorScheme
+          options.json.colorScheme = '${theme}';
+          
+          // 修改loginSyncToken
+          options.json.loginSyncToken = '${mergedToken}';
+          
+          // 修改roomSearchHistory
+          if (!options.json.roomSearchHistory) {
+            options.json.roomSearchHistory = [];
+          }
+          
+          // 检查是否已存在相同roomId的记录
+          const existingIndex = options.json.roomSearchHistory.findIndex(item => item.value === '${roomId}');
+          
+          // 如果不存在，则添加新记录
+          if (existingIndex === -1) {
+            options.json.roomSearchHistory.push({
+              value: '${roomId}',
+              uid: '${userId}',
+              label: '${roomId}',
+              username: '${username}'
+            });
+          }
+          
+          // 保存回localStorage
+          localStorage.setItem('laplaceChatOptions_v4', JSON.stringify(options));
+
+          // 将tab设置为进阶
+          localStorage.setItem('laplaceChatActiveTab', '"advanced"');
+          
+          return { 
+            success: true, 
+            message: '已更新LAPLACE配置',
+          };
+        } catch (err) {
+          console.error('设置LAPLACE配置失败:', err);
+          return { success: false, message: '设置失败: ' + err.message };
+        }
+      })();
+    `;
+
+    webview
+      .executeJavaScript(scriptToExecute)
+      .then(result => {
+        if (result && result.success) {
+          webview.reload();
+          showToast(result.message, 'success');
+          console.log('LAPLACE配置已更新:', result);
+        } else {
+          showToast(result?.message || '设置失败', 'error');
+          console.error('设置LAPLACE配置失败:', result);
+        }
+      })
+      .catch(err => {
+        console.error('执行脚本失败:', err);
+        showToast('设置失败', 'error');
+      });
+  };
+
+  // 合并同步登录状态和一键设置的功能
+  const handleSyncAndSetOptions = async () => {
     // 检查用户是否已登录
     if (!isLoggedIn) {
       showToast('请先关联账号', 'error');
@@ -117,16 +237,16 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
 
       console.log('上传结果:', result);
 
-      showToast(result.message, result.success ? 'success' : 'error');
-
-      // 如果同步成功，则设置token到弹幕查看器
+      // 如果同步成功，继续执行一键设置
       if (result.success) {
-        setTokenToDanmaku(mergedToken);
-        console.log('已发送token到弹幕机', mergedToken);
+        showToast('登录状态同步成功', 'success');
+        setOptions();
+      } else {
+        showToast(result.message, 'error');
       }
     } catch (error) {
-      console.error('上传过程中出错:', error);
-      showToast(`上传失败: ${error}`, 'error');
+      console.error('同步过程中出错:', error);
+      showToast(`同步失败: ${error}`, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -201,6 +321,105 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
     const webview = webviewRef.current;
 
     const handleWebviewLoad = () => {
+      // laplace的配置初始值
+      // const options = {
+      //   json: {
+      //     roomIds: ['10291374'],
+      //     roomSearchHistory: [
+      //       { value: '5440', uid: '9617619', label: '5440', username: '哔哩哔哩直播' },
+      //       { value: '10291374', uid: '15557555', label: '10291374', username: '心如止水小阿酒' },
+      //     ],
+      //     roomSearchHistoryOpenPlatform: [
+      //       { value: '5440', uid: '9617619', label: '5440', username: '哔哩哔哩直播' },
+      //     ],
+      //     colorScheme: 'dark',
+      //     runningMode: 'obs',
+      //     connectionMode: 'direct',
+      //     uiLang: 'zh-Hans',
+      //     panelGiftFilterByPrice: 1,
+      //     panelEventHideRead: false,
+      //     panelEventHideResult: false,
+      //     customCss: '',
+      //     dashboardShowMetrics: true,
+      //     dashboardUseCst: false,
+      //     dashboardShowTopRankUsers: true,
+      //     useCst: false,
+      //     danmakuFetcherApi: '',
+      //     eventFetcherAuth: '',
+      //     showUsername: true,
+      //     showAvatar: true,
+      //     showAvatarFrame: true,
+      //     showSystemMessage: true,
+      //     showStickyBar: true,
+      //     sortStickyBarByPrice: false,
+      //     showPhoneNotVerified: false,
+      //     showOnlyCurrentMedal: false,
+      //     showAutoDanmaku: false,
+      //     showUserLevelAbove: 0,
+      //     showGiftPriceAbove: 1,
+      //     showGiftHighlightAbove: 29.99,
+      //     showGiftStickyAbove: 29.99,
+      //     showGiftStickyAlways: false,
+      //     showGiftFree: false,
+      //     showEnterEvent: false,
+      //     showEnterEventCurrentGuardOnly: false,
+      //     showFollowEvent: false,
+      //     showDanmaku: true,
+      //     showGift: true,
+      //     showSuperChat: true,
+      //     showToast: true,
+      //     showRedEnvelop: true,
+      //     showLottery: true,
+      //     showNotice: false,
+      //     showGuardBadge: true,
+      //     eventMessageColor: '',
+      //     eventGuardUsernameColor0: '',
+      //     eventGuardUsernameColor1: '',
+      //     eventGuardUsernameColor2: '',
+      //     eventGuardUsernameColor3: '',
+      //     showMedal: false,
+      //     showMedalLightenedOnly: true,
+      //     showWealthMedal: false,
+      //     showUserLvl: false,
+      //     showEmote: true,
+      //     showCurrentRank: true,
+      //     showModBadge: true,
+      //     limitEventAmount: 50,
+      //     limitStickyAmount: 10,
+      //     autoHideEvent: 0,
+      //     filterByMedalRange: [0, 40],
+      //     baseFontSize: 20,
+      //     altDanmakuLayout: false,
+      //     customAvatarApi: '',
+      //     showGiftEffect: false,
+      //     showGiftEffectAbove: 99,
+      //     dashboardAutoShowGiftEffect: true,
+      //     dashboardAutoShowGiftEffectAbove: 0,
+      //     remoteEmotesApi: '',
+      //     sceneName: '',
+      //     loginSyncToken: 'uNBgy4mVWi3XBUg64UK9cv@57QhWHJvBMpfqDbtgMPbrR',
+      //     loginSyncServer: '',
+      //     enableCloudTheme: null,
+      //     cloudTheme: '',
+      //     remoteTheme: null,
+      //   },
+      //   meta: { values: { enableCloudTheme: ['undefined'], remoteTheme: ['undefined'] } },
+      // };
+
+      // 设置localStorage的初始值
+      // webview.executeJavaScript(`
+      //   (function() {
+      //     if (!localStorage.getItem('laplaceChatActiveTab')) {
+      //       localStorage.setItem('laplaceChatActiveTab', '"advanced"');
+      //       console.log('已设置laplaceChatActiveTab初始值为advanced');
+      //     }
+      //     if (!localStorage.getItem('laplaceChatOptions_v4')) {
+      //       localStorage.setItem('laplaceChatOptions_v4', '${JSON.stringify(options)}');
+      //       console.log('已设置laplaceChatOptions_v4初始值');
+      //     }
+      //   })();
+      // `);
+
       console.log('webview加载完成');
       setWebviewLoading(false);
     };
@@ -222,17 +441,17 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
           <Badge color="indigo" variant="solid">
             关联账号
           </Badge>
-          ，成功后打开 LAPLACE 中的<Badge color="gray">进阶</Badge>标签，打开后点击
+          ，成功后点击
           <Badge color="indigo" variant="solid">
-            同步登录状态
+            一键同步并设置
           </Badge>
-          ，即可自动完成同步与密钥设置。接下来在 LAPLACE 中进行直播间与弹幕的配置，每次修改完点击
+          完成所有配置。接下来在 LAPLACE 中进行弹幕的配置，每次修改完点击
           <Badge color="green">复制 OBS 链接</Badge>，再粘贴到 OBS 中。
         </Callout.Text>
       </Callout.Root>
 
       {/* 设置按钮 */}
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <Flex align="center" className="mb-2">
           <Text size="1" color="gray" weight="medium">
             调试
@@ -244,7 +463,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
             设置到弹幕机
           </Button>
         </Flex>
-      </div>
+      </div> */}
 
       {/* 操作模块 */}
       <div className="mb-4">
@@ -272,11 +491,16 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
             </TextField.Root>
           </div>
           <Tooltip content="同步登录状态后，自动在 LAPLACE 中完成配置">
-            <Button onClick={handleUploadCookies} variant="solid" disabled={isLoading}>
+            <Button onClick={handleSyncAndSetOptions} variant="solid" disabled={isLoading}>
               <Spinner size="1" loading={isLoading} />
-              {isLoading ? '同步中' : '同步登录状态'}
+              {isLoading ? '同步中' : '一键同步并设置'}
             </Button>
           </Tooltip>
+          {/* <Tooltip content="将密钥、房间号等信息同步到 LAPLACE 中">
+            <Button variant="soft" onClick={setOptions}>
+              仅设置配置
+            </Button>
+          </Tooltip> */}
           <Tooltip content="新开窗口并放大，更方便配置">
             <Button variant="soft" onClick={openInNewWindow}>
               新窗口打开 LAPLACE
