@@ -59,22 +59,22 @@ const MainLayout: React.FC = () => {
 
         {/* 内容区域 */}
         <Box p="2" style={{ overflow: 'auto', flexGrow: 1 }}>
-          <Tabs.Content value="danmaku" className="h-full">
+          <Tabs.Content value="danmaku" className="h-full data-[state=inactive]:hidden" forceMount>
             <Container size="4" height="100%" className="h-full">
               <DanmakuViewer />
             </Container>
           </Tabs.Content>
-          <Tabs.Content value="control" className="h-full">
+          <Tabs.Content value="control" className="h-full data-[state=inactive]:hidden" forceMount>
             <Container size="4" height="100%" className="h-full">
               <ControlPanel />
             </Container>
           </Tabs.Content>
-          <Tabs.Content value="song" className="h-full">
+          <Tabs.Content value="song" className="h-full data-[state=inactive]:hidden" forceMount>
             <Container size="4" height="100%" className="h-full">
               <SongRequest />
             </Container>
           </Tabs.Content>
-          <Tabs.Content value="settings" className="h-full">
+          <Tabs.Content value="settings" className="h-full data-[state=inactive]:hidden" forceMount>
             <Container size="4" height="100%" className="h-full">
               <Settings />
             </Container>
