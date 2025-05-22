@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useUserStore } from '../store/userStore';
-import { Button, Flex, Text, Separator, Spinner } from '@radix-ui/themes';
+import { Spinner } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
 
 const ControlPanel: React.FC = () => {
@@ -17,10 +17,24 @@ const ControlPanel: React.FC = () => {
       setWebviewLoading(false);
     };
 
+    const handleIpcMessage = (event: Electron.IpcMessageEvent) => {
+      switch (event.channel) {
+        case 'send':
+          console.log('send:', event.args[0]);
+          break;
+        case 'message':
+          console.log('message:', event.args[0]);
+          break;
+      }
+    };
+
     if (webview) {
       webview.addEventListener('did-finish-load', handleWebviewLoad);
+      webview.addEventListener('ipc-message', handleIpcMessage);
+
       return () => {
         webview.removeEventListener('did-finish-load', handleWebviewLoad);
+        webview.removeEventListener('ipc-message', handleIpcMessage);
       };
     }
   }, []);

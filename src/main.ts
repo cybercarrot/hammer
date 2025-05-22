@@ -111,6 +111,15 @@ const createWindow = () => {
     createContextMenu(mainWindow.webContents).popup();
   });
 
+  // 给内部的 webview 添加 preload
+  mainWindow.webContents.on('will-attach-webview', (e, webPreferences, params) => {
+    if (params.src.includes('https://chat.laplace.live/dashboard')) {
+      webPreferences.preload = path.join(__dirname, 'webviewPreload.js');
+      webPreferences.contextIsolation = false;
+      console.log('will-attach-webview', webPreferences);
+    }
+  });
+
   // 为所有新建的webContents添加右键菜单
   app.on('web-contents-created', (_, webContents) => {
     webContents.on('context-menu', () => {
