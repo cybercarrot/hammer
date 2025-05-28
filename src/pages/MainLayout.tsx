@@ -3,6 +3,7 @@ import DanmakuViewer from './DanmakuViewer';
 import SongRequest from './SongRequest';
 import ControlPanel from './ControlPanel';
 import Settings from './Settings';
+import Tools from './Tools';
 import ThemeSwitch from '../components/ThemeSwitch';
 import UserProfile from '../components/UserProfile';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
@@ -46,6 +47,7 @@ const MainLayout: React.FC = () => {
                 <Tabs.Trigger value="danmaku">弹幕机</Tabs.Trigger>
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
                 <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
+                <Tabs.Trigger value="tools">小工具</Tabs.Trigger>
                 <Tabs.Trigger value="settings">设置</Tabs.Trigger>
               </Tabs.List>
             </Box>
@@ -72,6 +74,11 @@ const MainLayout: React.FC = () => {
           <Tabs.Content value="song" className="h-full data-[state=inactive]:hidden" forceMount>
             <Container size="4" height="100%" className="h-full">
               <SongRequest />
+            </Container>
+          </Tabs.Content>
+          <Tabs.Content value="tools" className="h-full data-[state=inactive]:hidden" forceMount>
+            <Container size="4" height="100%" className="h-full">
+              <Tools />
             </Container>
           </Tabs.Content>
           <Tabs.Content value="settings" className="h-full data-[state=inactive]:hidden" forceMount>
