@@ -4,6 +4,7 @@ import { ipcRenderer } from 'electron';
 const OriginalWebSocket = window.WebSocket;
 
 // 重写WebSocket
+// @ts-expect-error 类型错误
 window.WebSocket = function (url, protocols) {
   console.log('WebSocket连接被创建:', url);
 
@@ -39,6 +40,7 @@ window.WebSocket = function (url, protocols) {
 // 复制原型和静态属性
 window.WebSocket.prototype = OriginalWebSocket.prototype;
 Object.keys(OriginalWebSocket).forEach(key => {
+  // @ts-expect-error 类型错误
   window.WebSocket[key] = OriginalWebSocket[key];
 });
 
