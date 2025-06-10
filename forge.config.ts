@@ -35,12 +35,6 @@ const config: ForgeConfig = {
           config: 'vite.preload.config.ts',
           target: 'preload',
         },
-        // TODO: 已弃用
-        // {
-        //   entry: 'src/webSocketPreload.ts',
-        //   config: 'vite.preload.config.ts',
-        //   target: 'preload',
-        // },
       ],
       renderer: [
         {
