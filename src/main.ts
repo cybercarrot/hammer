@@ -12,6 +12,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './main/cookies';
 import windowStateKeeper from 'electron-window-state';
+import { WebSocketServer } from 'ws';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -20,6 +21,8 @@ if (started) {
 
 // 存储当前主窗口引用
 let mainWindow: BrowserWindow | null = null;
+// WebSocket 服务器实例
+let wss: WebSocketServer | null = null;
 // 创建托盘变量
 let tray: Tray | null = null;
 // 图标路径
@@ -32,6 +35,13 @@ const icon = nativeImage.createFromPath(iconPath);
 // 直接退出应用的函数
 const quitApp = () => {
   console.log('quitApp');
+  // 关闭 WebSocket 服务器
+  if (wss) {
+    wss.close(() => {
+      console.log('WebSocket 服务器已关闭');
+    });
+    wss = null;
+  }
   if (mainWindow) {
     mainWindow.removeAllListeners('close');
     mainWindow.close();
@@ -111,14 +121,14 @@ const createWindow = () => {
     createContextMenu(mainWindow.webContents).popup();
   });
 
-  // 给内部的 webview 添加 preload
-  mainWindow.webContents.on('will-attach-webview', (e, webPreferences, params) => {
-    if (params.src.includes('https://chat.laplace.live/dashboard')) {
-      webPreferences.preload = path.join(__dirname, 'webviewPreload.js');
-      webPreferences.contextIsolation = false;
-      console.log('will-attach-webview', webPreferences);
-    }
-  });
+  // TODO: 已弃用，给控制台模块的 webview 添加 preload，完成 websocket 的劫持
+  // mainWindow.webContents.on('will-attach-webview', (e, webPreferences, params) => {
+  //   if (params.src.includes('https://chat.laplace.live/dashboard')) {
+  //     webPreferences.preload = path.join(__dirname, 'webSocketPreload.js');
+  //     webPreferences.contextIsolation = false;
+  //     console.log('will-attach-webview', webPreferences);
+  //   }
+  // });
 
   // 为所有新建的webContents添加右键菜单
   app.on('web-contents-created', (_, webContents) => {
@@ -221,7 +231,38 @@ const createTray = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+// 创建 WebSocket 服务器
+const createWebSocketServer = () => {
+  const port = 9696;
+  wss = new WebSocketServer({ port });
+
+  wss.on('connection', ws => {
+    console.log('新的 WebSocket 连接已建立');
+
+    // 监听消息
+    ws.on('message', message => {
+      console.log('收到消息:', message.toString());
+      // 回复客户端
+      ws.send(`服务器收到消息: ${message}`);
+    });
+
+    // 监听连接关闭
+    ws.on('close', () => {
+      console.log('WebSocket 连接已关闭');
+    });
+
+    // 监听错误
+    ws.on('error', error => {
+      console.error('WebSocket 错误:', error);
+    });
+  });
+
+  console.log(`WebSocket 服务器已启动，监听端口 ${port}`);
+};
+
 app.on('ready', () => {
+  // 启动 WebSocket 服务器
+  createWebSocketServer();
   // 全局移除菜单栏
   Menu.setApplicationMenu(null);
 

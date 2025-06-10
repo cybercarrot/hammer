@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '../store/userStore';
 import { Spinner } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
@@ -8,33 +8,46 @@ const ControlPanel: React.FC = () => {
   const webviewRef = useRef<WebviewTag>(null);
   const [webviewLoading, setWebviewLoading] = useState(true);
 
+  // 注入并初始化 event_bridge_settings 的代码
+  const injectEventBridgeSettings = useCallback((webview: WebviewTag) => {
+    const initScript = `
+(function() {
+  try {
+    const settings = localStorage.getItem('event_bridge_settings');
+    if (!settings || settings === 'null') {
+      const defaultSettings = { address: 'localhost', port: 9696 };
+      localStorage.setItem('event_bridge_settings', JSON.stringify(defaultSettings));
+      console.log('已初始化 event_bridge_settings:', defaultSettings);
+    } else {
+      console.log('event_bridge_settings 已存在:', JSON.parse(settings));
+    }
+  } catch (error) {
+    console.error('初始化 event_bridge_settings 失败:', error);
+  }
+})();
+    `.trim();
+
+    // 立即执行初始化脚本
+    webview.executeJavaScript(initScript).catch(console.error);
+  }, []);
+
   useEffect(() => {
-    // 当webview加载完成后执行相关操作
     const webview = webviewRef.current;
 
     const handleWebviewLoad = () => {
       console.log('webview加载完成');
       setWebviewLoading(false);
-    };
-
-    const handleIpcMessage = (event: Electron.IpcMessageEvent) => {
-      switch (event.channel) {
-        case 'send':
-          console.log('send:', event.args[0]);
-          break;
-        case 'message':
-          console.log('message:', event.args[0]);
-          break;
-      }
+      // 注入 event_bridge_settings 初始化代码
+      injectEventBridgeSettings(webview);
     };
 
     if (webview) {
       webview.addEventListener('did-finish-load', handleWebviewLoad);
-      webview.addEventListener('ipc-message', handleIpcMessage);
+      // webview.addEventListener('ipc-message', handleIpcMessage);
 
       return () => {
         webview.removeEventListener('did-finish-load', handleWebviewLoad);
-        webview.removeEventListener('ipc-message', handleIpcMessage);
+        // webview.removeEventListener('ipc-message', handleIpcMessage);
       };
     }
   }, []);
