@@ -43,7 +43,7 @@ const MainLayout: React.FC = () => {
 
             {/* 标签切换放在顶部栏中间 */}
             <Box style={{ position: 'relative', top: '8px' }}>
-              <Tabs.List color="crimson" size="2">
+              <Tabs.List color="ruby" size="2">
                 <Tabs.Trigger value="danmaku">弹幕机</Tabs.Trigger>
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
                 <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
@@ -52,7 +52,7 @@ const MainLayout: React.FC = () => {
               </Tabs.List>
             </Box>
 
-            <Flex gap="4" align="center">
+            <Flex align="center">
               <UserProfile />
               <ThemeSwitch />
             </Flex>

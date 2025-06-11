@@ -26,7 +26,7 @@ const UserProfile: React.FC = () => {
   return (
     <div className="flex items-center">
       {isLoggedIn ? (
-        <Flex align="center" gap="2">
+        <Flex align="center">
           {roomId && (
             <Flex align="center" gap="1" className="mr-1">
               <Tooltip content="点击复制直播间ID">
@@ -44,7 +44,7 @@ const UserProfile: React.FC = () => {
           )}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
-              <Button variant="ghost" style={{ padding: 4 }}>
+              <Button variant="ghost" className="!m-0">
                 <Avatar size="2" src={avatar} fallback={username?.[0] || 'U'} />
               </Button>
             </DropdownMenu.Trigger>

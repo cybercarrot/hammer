@@ -55,7 +55,7 @@ const ControlPanel: React.FC = () => {
   if (!roomId) {
     return (
       <div className="w-full h-full flex flex-col">
-        <div className="flex-1 border border-gray-300 rounded-lg p-4">
+        <div className="flex-1 border border-gray-300 dark:border-gray-600 rounded-md p-4">
           <div className="text-center text-gray-500 my-8">
             <p>请先关联账号</p>
           </div>
@@ -66,7 +66,7 @@ const ControlPanel: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="border border-gray-300 rounded-lg overflow-hidden relative flex flex-1 flex-col">
+      <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden relative flex flex-1 flex-col">
         <webview
           ref={webviewRef}
           src={`https://chat.laplace.live/dashboard/${roomId}`}

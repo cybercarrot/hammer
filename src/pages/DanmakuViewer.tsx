@@ -522,7 +522,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />
         </Flex>
-        <div className="border border-gray-300 rounded-lg overflow-hidden relative flex flex-1 flex-col">
+        <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden relative flex flex-1 flex-col">
           <webview
             ref={webviewRef}
             src={url}

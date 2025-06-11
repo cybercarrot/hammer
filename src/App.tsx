@@ -1,7 +1,6 @@
 import React from 'react';
 import MainLayout from './pages/MainLayout';
 import { Theme } from '@radix-ui/themes';
-import './styles/theme-config.css';
 import { ToastProvider } from './context/ToastContext';
 import { useSettingStore } from './store/settingStore';
 
