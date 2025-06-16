@@ -10,6 +10,7 @@ import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/them
 import packageJson from '../../package.json';
 import { useUserStore } from '../store/userStore';
 
+// MARK: 主布局
 const MainLayout: React.FC = () => {
   // 获取检查登录状态的方法
   const { checkExistingLogin } = useUserStore();

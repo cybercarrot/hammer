@@ -3,6 +3,7 @@ import { useUserStore } from '../store/userStore';
 import { Spinner } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
 
+// MARK: 控制台
 const ControlPanel: React.FC = () => {
   const { roomId } = useUserStore();
   const webviewRef = useRef<WebviewTag>(null);
