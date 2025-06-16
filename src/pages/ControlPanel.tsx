@@ -104,7 +104,7 @@ const ControlPanel: React.FC = () => {
               onClick={() => setShowWebview(true)}
               disabled={!localRoomId}
             >
-              连接弹幕并打开控制台
+              打开控制台并连接弹幕
             </Button>
           </div>
         </div>

@@ -13,6 +13,8 @@ import {
   Tabs,
   IconButton,
   Tooltip,
+  Badge,
+  Popover,
 } from '@radix-ui/themes';
 import {
   MagnifyingGlassIcon,
@@ -26,8 +28,6 @@ import { LaplaceEventBridgeClient } from '@laplace.live/event-bridge-sdk';
 import APlayer from 'aplayer';
 import 'aplayer/dist/APlayer.min.css';
 import { searchSongs, getSongInfo, SearchResult } from '../services/musicApi';
-
-// type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
 const MUSIC_SOURCES = [
   { value: 'netease', label: '网易云音乐' },
@@ -46,7 +46,16 @@ const MUSIC_SOURCES = [
 
 // MARK: 点歌机
 const SongRequest: React.FC = () => {
-  // const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const clientRef = useRef<LaplaceEventBridgeClient | null>(null);
+  const [prefixConfig, setPrefixConfig] = useState({
+    netease: '点歌',
+    kuwo: '点k歌',
+    tidal: '点t歌',
+    joox: '点j歌',
+  });
+  const [connectionState, setConnectionState] = useState<
+    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+  >('disconnected');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSource, setSearchSource] = useState('netease');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -59,10 +68,13 @@ const SongRequest: React.FC = () => {
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // 点歌列表
-  const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<SearchResult[]>([]);
+  type Song = SearchResult & {
+    requester?: string;
+  };
+  const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<Song[]>([]);
 
   // 固定歌单（默认播放列表）
-  const [defaultPlaylist, , getDefaultPlaylist] = useGetState<SearchResult[]>([
+  const [defaultPlaylist, , getDefaultPlaylist] = useGetState<Song[]>([
     {
       album: 'My Story,Your Song 经典全记录',
       artist: ['孙燕姿'],
@@ -121,8 +133,12 @@ const SongRequest: React.FC = () => {
     }
   };
 
-  const addSongToRequestPlaylist = async (song: SearchResult, top = false) => {
+  const addSongToRequestPlaylist = async (_song: Song, top = false) => {
     // 需要是异步方法，需要等待setRequestPlaylist生效
+    const song = {
+      ..._song,
+      requester: _song.requester || '[系统]',
+    };
     setRequestPlaylist(prev => (top ? [song, ...prev] : [...prev, song]));
     // setActiveTab('request');
   };
@@ -141,7 +157,7 @@ const SongRequest: React.FC = () => {
       return;
     }
 
-    let song: SearchResult;
+    let song: Song;
     if (currentRequestPlaylist.length > 0) {
       // 如果点歌列表有歌，取出一首插队播放
       song = currentRequestPlaylist[0];
@@ -171,37 +187,105 @@ const SongRequest: React.FC = () => {
       });
   };
 
-  useEffect(() => {
-    // 初始化客户端
-    const newClient = new LaplaceEventBridgeClient({
+  const handleToggleDanmu = () => {
+    if (connectionState === 'connecting' || connectionState === 'reconnecting') {
+      showToast('弹幕正在连接中', 'info');
+      return;
+    }
+
+    if (connectionState === 'connected') {
+      // 如果已连接，则关闭连接
+      if (clientRef.current) {
+        clientRef.current.disconnect();
+        clientRef.current = null;
+        showToast('弹幕连接已关闭', 'info');
+      }
+      return;
+    }
+
+    // 如果未连接，则创建新的客户端实例
+    const client = new LaplaceEventBridgeClient({
       url: 'ws://localhost:9696',
       token: '',
       reconnect: true,
-      reconnectInterval: 5000,
-      maxReconnectAttempts: 5,
+      reconnectInterval: 3000,
+      maxReconnectAttempts: 0,
     });
 
-    // 设置事件监听器
-    newClient.on('message', () => {
-      // TODO: 待实现
-    });
+    // 保存客户端实例引用
+    clientRef.current = client;
 
-    // newClient.onConnectionStateChange((state: ConnectionState) => {
-    //   console.log(`Connection state changed to: ${state}`);
-    //   setConnectionState(state);
-    // });
+    // 设置消息处理器
+    client.on('message', event => {
+      const content = event.message;
+      if (!content) return;
 
-    // 连接到服务器
-    const connect = async () => {
-      try {
-        await newClient.connect();
-      } catch (error) {
-        console.error('Failed to connect to WebSocket server:', error);
+      let source: string;
+      let keyword: string;
+
+      // 检查消息是否以配置的前缀开头
+      for (const [src, prefix] of Object.entries(prefixConfig)) {
+        if (content.startsWith(prefix)) {
+          source = src;
+          keyword = content.slice(prefix.length).trim();
+          break;
+        }
       }
-    };
 
-    connect();
+      if (source && keyword) {
+        const requester = event.username;
+        console.log(`收到${requester}的弹幕点歌:`, source, keyword);
+        handleDanmuSongRequest(source, keyword, requester);
+      }
+    });
 
+    // 设置连接状态变化处理器
+    client.onConnectionStateChange(
+      (state: 'disconnected' | 'connecting' | 'connected' | 'reconnecting') => {
+        console.log(`Connection state changed to: ${state}`);
+        setConnectionState(state);
+
+        if (state === 'connected') {
+          showToast('弹幕连接成功', 'success');
+        }
+      }
+    );
+
+    // 连接服务器
+    client.connect().catch(error => {
+      console.error('Failed to connect to WebSocket server:', error);
+      showToast('弹幕连接失败: ' + error.message, 'error');
+    });
+  };
+
+  const handleDanmuSongRequest = async (source: string, keyword: string, requester = '[匿名]') => {
+    try {
+      // Type assertion for source since we know it's a valid source from our config
+      const results = await searchSongs(keyword, source as 'netease' | 'kuwo' | 'tidal' | 'joox');
+      if (results.length > 0) {
+        const song = {
+          ...results[0],
+          requester, // 添加点歌者信息
+        };
+        await addSongToRequestPlaylist(song);
+        const artistName = Array.isArray(song.artist)
+          ? song.artist.join('/')
+          : song.artist || '未知艺术家';
+        showToast(`已添加${requester}的点歌: ${song.name} - ${artistName}`, 'info');
+      } else {
+        showToast(`${requester}点歌未找到: ${keyword}`, 'error');
+      }
+    } catch (error) {
+      console.error('Failed to process danmu song request:', error);
+      showToast('弹幕点歌失败', 'error');
+    }
+  };
+
+  const handlePrefixChange = (source: string, value: string) => {
+    setPrefixConfig(prev => ({ ...prev, [source]: value }));
+  };
+
+  useEffect(() => {
     // MARK: 初始化播放器
     if (playerContainerRef.current && !playerRef.current) {
       playerRef.current = new APlayer({
@@ -247,9 +331,7 @@ const SongRequest: React.FC = () => {
 
     // 清理函数
     return () => {
-      if (newClient) {
-        newClient.disconnect();
-      }
+      // 注意：客户端实例现在在 handleToggleDanmu 中管理
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -267,7 +349,7 @@ const SongRequest: React.FC = () => {
   return (
     <div className="w-full h-full flex p-4 flex-row space-x-4">
       {/* 左侧：播放区域 */}
-      <div className="w-1/3 flex flex-col space-y-4">
+      <div className="w-2/5 flex flex-col space-y-4">
         {/* 播放器容器 */}
         <div className="flex flex-col">
           <Flex align="center" className="mb-2">
@@ -308,14 +390,19 @@ const SongRequest: React.FC = () => {
                   <React.Fragment key={`req-${index}`}>
                     {index > 0 && <Separator size="4" className="my-1" />}
                     <div className="group flex items-center p-2 rounded relative">
-                      <div className="w-2/3 truncate pr-2">
+                      <div className="w-1/2 truncate pr-2">
                         <Text className="truncate" size="2">
                           {song.name}
                         </Text>
                       </div>
-                      <div className="w-1/3 truncate px-1">
+                      <div className="w-1/4 truncate px-1">
                         <Text className="truncate text-gray-500" size="1">
                           {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
+                        </Text>
+                      </div>
+                      <div className="w-1/4 truncate px-1">
+                        <Text className="truncate text-gray-500" size="1">
+                          {song.requester}
                         </Text>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-end pr-2 bg-black/0 group-hover:bg-black/70 transition-background duration-200 rounded overflow-hidden">
@@ -376,7 +463,7 @@ const SongRequest: React.FC = () => {
           <Tabs.Content value="default" className="h-full">
             {defaultPlaylist.length > 0 ? (
               <div className="mt-2">
-                {defaultPlaylist.map((song: SearchResult, index: number) => {
+                {defaultPlaylist.map((song: Song, index: number) => {
                   const isCurrent = index === defaultPlaylistIndex;
                   return (
                     <React.Fragment key={`def-${index}`}>
@@ -458,8 +545,72 @@ const SongRequest: React.FC = () => {
         </Tabs.Root>
       </div>
 
-      {/* 右侧：搜索区域 */}
-      <div className="w-2/3 flex flex-col ">
+      {/* 右侧：操作区域 */}
+      <div className="w-3/5 flex flex-col">
+        <Flex align="center" className="mb-2">
+          <Text size="1" color="gray" weight="medium">
+            操作
+          </Text>
+          <Separator orientation="horizontal" className="flex-1 ml-2" />
+        </Flex>
+        <Box className="mb-4 space-y-2">
+          <Flex gap="2" align="center">
+            <Badge
+              color={
+                connectionState === 'connected'
+                  ? 'green'
+                  : connectionState === 'disconnected'
+                    ? 'red'
+                    : 'gray'
+              }
+              variant="soft"
+              size="3"
+            >
+              当前状态：
+              {connectionState === 'connected'
+                ? '已开启'
+                : connectionState === 'disconnected'
+                  ? '未开启'
+                  : '开启中'}
+            </Badge>
+            <Button
+              size="2"
+              color={connectionState === 'connected' ? 'red' : 'indigo'}
+              onClick={handleToggleDanmu}
+              disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
+            >
+              {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
+            </Button>
+
+            <Popover.Root>
+              <Popover.Trigger>
+                <Button variant="soft" size="2">
+                  点歌前缀配置
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content className="w-50" size="1">
+                <Text size="1" color="gray" as="p" mb="2">
+                  修改实时生效
+                </Text>
+                {Object.entries(prefixConfig).map(([source, prefix]) => (
+                  <Flex key={source} gap="2" align="center" mb="2">
+                    <Text size="1" className="w-18">
+                      {MUSIC_SOURCES.find(s => s.value === source)?.label || source}:
+                    </Text>
+                    <TextField.Root
+                      size="1"
+                      value={prefix}
+                      onChange={e => handlePrefixChange(source, e.target.value)}
+                      className="w-18"
+                    />
+                  </Flex>
+                ))}
+              </Popover.Content>
+            </Popover.Root>
+          </Flex>
+        </Box>
+
+        {/* 搜索区域 */}
         <Flex align="center" className="mb-2">
           <Text size="1" color="gray" weight="medium">
             搜索歌曲
@@ -469,7 +620,7 @@ const SongRequest: React.FC = () => {
         <Box className="flex-1 flex flex-col overflow-hidden">
           <form onSubmit={handleSearch}>
             <Flex gap="2">
-              <Select.Root value={searchSource} onValueChange={setSearchSource} size="1">
+              <Select.Root value={searchSource} onValueChange={setSearchSource} size="2">
                 <Select.Trigger className="w-[120px]" />
                 <Select.Content>
                   {MUSIC_SOURCES.map(source => (
@@ -483,12 +634,12 @@ const SongRequest: React.FC = () => {
                 className="flex-1"
                 placeholder="搜索歌曲、歌手或专辑"
                 value={searchQuery}
-                size="1"
+                size="2"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(e.target.value)
                 }
               />
-              <Button type="submit" disabled={isSearching} size="1" variant="surface">
+              <Button type="submit" disabled={isSearching} size="2" variant="surface">
                 <MagnifyingGlassIcon width="14" height="14" className="mr-1" />
                 {isSearching ? '搜索中...' : '搜索'}
               </Button>
