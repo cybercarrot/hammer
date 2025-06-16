@@ -421,7 +421,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       //   })();
       // `);
 
-      console.log('webview加载完成');
+      console.log('弹幕机webview加载完成');
       setWebviewLoading(false);
     };
 
@@ -439,15 +439,18 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       <Callout.Root color="blue" size="1" className="mb-3 !p-2">
         <Callout.Text>
           初次打开先
-          <Badge color="indigo" variant="solid">
+          <Badge color="indigo" variant="solid" ml="1" mr="1">
             关联账号
           </Badge>
           ，成功后点击
-          <Badge color="indigo" variant="solid">
+          <Badge color="indigo" variant="solid" ml="1" mr="1">
             一键同步并设置
           </Badge>
           完成所有配置。接下来在 LAPLACE 中进行弹幕的配置，每次修改完点击
-          <Badge color="green">复制 OBS 链接</Badge>，再粘贴到 OBS 中。
+          <Badge color="green" ml="1" mr="1">
+            复制 OBS 链接
+          </Badge>
+          ，再粘贴到 OBS 中。
         </Callout.Text>
       </Callout.Root>
 
@@ -475,7 +478,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
           <Separator orientation="horizontal" className="flex-1 ml-2" />
         </Flex>
         <div className="flex gap-2 items-center">
-          <div className="relative flex-shrink-0" style={{ minWidth: '200px' }}>
+          <div className="relative flex-shrink-0">
             <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly>
               <TextField.Slot side="right">
                 <Tooltip content="复制到剪贴板">
