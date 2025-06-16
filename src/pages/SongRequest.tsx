@@ -15,6 +15,7 @@ import {
   Tooltip,
   Badge,
   Popover,
+  ScrollArea,
 } from '@radix-ui/themes';
 import {
   MagnifyingGlassIcon,
@@ -47,12 +48,35 @@ const MUSIC_SOURCES = [
 // MARK: 点歌机
 const SongRequest: React.FC = () => {
   const clientRef = useRef<LaplaceEventBridgeClient | null>(null);
-  const [prefixConfig, setPrefixConfig] = useState({
+  const [prefixConfig, setPrefixConfig, getPrefixConfig] = useGetState({
     netease: '点歌',
     kuwo: '点k歌',
     tidal: '点t歌',
     joox: '点j歌',
   });
+
+  // 黑名单关键词
+  const [blacklist, setBlacklist] = useState<string[]>([]);
+  const [newBlacklistItem, setNewBlacklistItem] = useState('');
+  const [showBlacklistConfig, setShowBlacklistConfig] = useState(false);
+
+  // 添加黑名单关键词
+  const addToBlacklist = () => {
+    if (newBlacklistItem.trim() && !blacklist.includes(newBlacklistItem.trim())) {
+      setBlacklist([...blacklist, newBlacklistItem.trim()]);
+      setNewBlacklistItem('');
+    }
+  };
+
+  // 移除黑名单关键词
+  const removeFromBlacklist = (keyword: string) => {
+    setBlacklist(blacklist.filter(item => item !== keyword));
+  };
+
+  // 检查是否包含黑名单关键词
+  const hasBlacklistedKeyword = (text: string) => {
+    return blacklist.some(keyword => text.toLowerCase().includes(keyword.toLowerCase()));
+  };
   const [connectionState, setConnectionState] = useState<
     'disconnected' | 'connecting' | 'connected' | 'reconnecting'
   >('disconnected');
@@ -224,7 +248,7 @@ const SongRequest: React.FC = () => {
       let keyword: string;
 
       // 检查消息是否以配置的前缀开头
-      for (const [src, prefix] of Object.entries(prefixConfig)) {
+      for (const [src, prefix] of Object.entries(getPrefixConfig())) {
         if (content.startsWith(prefix)) {
           source = src;
           keyword = content.slice(prefix.length).trim();
@@ -260,6 +284,13 @@ const SongRequest: React.FC = () => {
 
   const handleDanmuSongRequest = async (source: string, keyword: string, requester = '[匿名]') => {
     try {
+      // 检查是否包含黑名单关键词
+      if (hasBlacklistedKeyword(keyword)) {
+        console.log(`已拦截黑名单关键词点歌: ${keyword}`);
+        showToast(`${requester}的点歌包含黑名单关键词，已拦截`, 'error');
+        return;
+      }
+
       // Type assertion for source since we know it's a valid source from our config
       const results = await searchSongs(keyword, source as 'netease' | 'kuwo' | 'tidal' | 'joox');
       if (results.length > 0) {
@@ -585,7 +616,7 @@ const SongRequest: React.FC = () => {
             <Popover.Root>
               <Popover.Trigger>
                 <Button variant="soft" size="2">
-                  点歌前缀配置
+                  点歌前缀
                 </Button>
               </Popover.Trigger>
               <Popover.Content className="w-50" size="1">
@@ -607,6 +638,70 @@ const SongRequest: React.FC = () => {
                 ))}
               </Popover.Content>
             </Popover.Root>
+
+            <Popover.Root open={showBlacklistConfig} onOpenChange={setShowBlacklistConfig}>
+              <Popover.Trigger>
+                <Button variant="soft" size="2">
+                  点歌黑名单
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content className="w-50" size="1">
+                <Text size="1" color="gray" as="p" mb="2">
+                  关键词(不区分大小写)
+                </Text>
+                <Flex gap="2" mb="2">
+                  <TextField.Root
+                    size="1"
+                    placeholder="输入关键词"
+                    value={newBlacklistItem}
+                    onChange={e => setNewBlacklistItem(e.target.value.trim())}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        addToBlacklist();
+                      }
+                    }}
+                  />
+                  <Button size="1" onClick={addToBlacklist}>
+                    添加
+                  </Button>
+                </Flex>
+
+                <Text size="1" color="gray" as="p" mb="2">
+                  当前黑名单：
+                </Text>
+                <ScrollArea type="always" scrollbars="vertical" className="max-h-50">
+                  {blacklist.length > 0 ? (
+                    <Flex direction="column" gap="1">
+                      {blacklist.map(keyword => (
+                        <Flex
+                          key={keyword}
+                          justify="between"
+                          align="center"
+                          className="p-1 mr-2 hover:bg-black/20 rounded"
+                        >
+                          <Text size="1">{keyword}</Text>
+                          <Tooltip content="删除" side="top">
+                            <IconButton
+                              className="!m-0"
+                              variant="ghost"
+                              size="2"
+                              color="ruby"
+                              onClick={() => removeFromBlacklist(keyword)}
+                            >
+                              <TrashIcon width={14} height={14} />
+                            </IconButton>
+                          </Tooltip>
+                        </Flex>
+                      ))}
+                    </Flex>
+                  ) : (
+                    <Text size="1" color="gray">
+                      无
+                    </Text>
+                  )}
+                </ScrollArea>
+              </Popover.Content>
+            </Popover.Root>
           </Flex>
         </Box>
 
@@ -621,7 +716,7 @@ const SongRequest: React.FC = () => {
           <form onSubmit={handleSearch}>
             <Flex gap="2">
               <Select.Root value={searchSource} onValueChange={setSearchSource} size="2">
-                <Select.Trigger className="w-[120px]" />
+                <Select.Trigger className="w-30" />
                 <Select.Content>
                   {MUSIC_SOURCES.map(source => (
                     <Select.Item key={source.value} value={source.value}>
