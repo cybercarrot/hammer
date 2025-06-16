@@ -85,12 +85,15 @@ const ControlPanel: React.FC = () => {
       {!showWebview && (
         <div className="mb-4">
           <Flex align="center" className="mb-2">
-            <Text size="1" color="gray" weight="medium">
+            <Text size="1" color="gray">
               操作
             </Text>
             <Separator orientation="horizontal" className="flex-1 ml-2" />
           </Flex>
           <div className="flex gap-2 items-center">
+            <Text size="2" color="gray">
+              房间号
+            </Text>
             <div className="w-24">
               <TextField.Root
                 placeholder="房间号"

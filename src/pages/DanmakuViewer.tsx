@@ -457,7 +457,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       {/* 设置按钮 */}
       {/* <div className="mb-4">
         <Flex align="center" className="mb-2">
-          <Text size="1" color="gray" weight="medium">
+          <Text size="1" color="gray">
             调试
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />
@@ -472,12 +472,15 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       {/* 操作模块 */}
       <div className="mb-4">
         <Flex align="center" className="mb-2">
-          <Text size="1" color="gray" weight="medium">
+          <Text size="1" color="gray">
             操作
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />
         </Flex>
         <div className="flex gap-2 items-center">
+          <Text size="2" color="gray">
+            密钥
+          </Text>
           <div className="relative flex-shrink-0">
             <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly>
               <TextField.Slot side="right">
@@ -521,7 +524,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
       {/* LAPLACE模块 */}
       <div className="flex flex-1 flex-col">
         <Flex align="center" className="mb-2">
-          <Text size="1" color="gray" weight="medium">
+          <Text size="1" color="gray">
             LAPLACE
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />

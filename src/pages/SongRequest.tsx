@@ -384,7 +384,7 @@ const SongRequest: React.FC = () => {
         {/* 播放器容器 */}
         <div className="flex flex-col">
           <Flex align="center" className="mb-2">
-            <Text size="1" color="gray" weight="medium">
+            <Text size="1" color="gray">
               播放器
             </Text>
             <Separator orientation="horizontal" className="flex-1 ml-2" />
@@ -579,7 +579,7 @@ const SongRequest: React.FC = () => {
       {/* 右侧：操作区域 */}
       <div className="w-3/5 flex flex-col">
         <Flex align="center" className="mb-2">
-          <Text size="1" color="gray" weight="medium">
+          <Text size="1" color="gray">
             操作
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />
@@ -707,7 +707,7 @@ const SongRequest: React.FC = () => {
 
         {/* 搜索区域 */}
         <Flex align="center" className="mb-2">
-          <Text size="1" color="gray" weight="medium">
+          <Text size="1" color="gray">
             搜索歌曲
           </Text>
           <Separator orientation="horizontal" className="flex-1 ml-2" />

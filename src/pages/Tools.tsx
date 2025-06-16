@@ -32,7 +32,7 @@ const Tools: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col">
       <Flex align="center" className="mb-2">
-        <Text size="1" color="gray" weight="medium">
+        <Text size="1" color="gray">
           随机整数生成
         </Text>
         <Separator orientation="horizontal" className="flex-1 ml-2" />
@@ -111,10 +111,10 @@ const Tools: React.FC = () => {
 
         {results.length > 0 && (
           <Box className="mt-4">
-            <Text size="4" weight="bold">
+            <Text size="3" weight="bold">
               结果：
             </Text>
-            <Text size="4" className="ml-2">
+            <Text size="3" className="ml-2">
               {results.join(', ')}
             </Text>
             {isDebug && (
