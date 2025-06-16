@@ -18,7 +18,6 @@ import {
   MagnifyingGlassIcon,
   PlayIcon,
   PlusIcon,
-  ClockIcon,
   PinTopIcon,
   TrashIcon,
 } from '@radix-ui/react-icons';
@@ -53,7 +52,6 @@ const SongRequest: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isGettingSongInfo, setIsGettingSongInfo] = useState(false);
   const [activeTab, setActiveTab] = useState<'request' | 'default'>('request');
-  const [defaultPlaylistIndex, setDefaultPlaylistIndex] = useState(0);
   const { showToast } = useToast();
 
   const playerRef = useRef<APlayer | null>(null);
@@ -92,7 +90,9 @@ const SongRequest: React.FC = () => {
       source: 'kuwo',
     },
   ]);
-  console.log('requestPlaylist', requestPlaylist);
+
+  const [defaultPlaylistIndex, setDefaultPlaylistIndex, getDefaultPlaylistIndex] =
+    useGetState<number>(0);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +133,9 @@ const SongRequest: React.FC = () => {
   const playNextSong = () => {
     const currentRequestPlaylist = getRequestPlaylist();
     const currentDefaultPlaylist = getDefaultPlaylist();
+    const currentDefaultPlaylistIndex = getDefaultPlaylistIndex();
     if (currentRequestPlaylist.length <= 0 && currentDefaultPlaylist.length <= 0) {
+      showToast('播放列表为空', 'info');
       console.log('播放列表为空');
       return;
     }
@@ -145,9 +147,8 @@ const SongRequest: React.FC = () => {
       setRequestPlaylist(currentRequestPlaylist.slice(1));
     } else if (currentDefaultPlaylist.length > 0) {
       // 如果点歌列表没有歌，播放默认歌单
-      // 先只支持循环播放
-      const nextIndex =
-        defaultPlaylistIndex >= currentDefaultPlaylist.length - 1 ? 0 : defaultPlaylistIndex + 1;
+      // 先只支持列表循环播放
+      const nextIndex = (currentDefaultPlaylistIndex + 1) % currentDefaultPlaylist.length;
       song = currentDefaultPlaylist[nextIndex];
       setDefaultPlaylistIndex(nextIndex);
       setActiveTab('default');
@@ -200,13 +201,13 @@ const SongRequest: React.FC = () => {
 
     connect();
 
-    // 初始化播放器
+    // MARK: 初始化播放器
     if (playerContainerRef.current && !playerRef.current) {
       playerRef.current = new APlayer({
         container: playerContainerRef.current,
         audio: [],
         autoplay: false,
-        loop: 'none',
+        // loop: 'none',
         // order: 'random',
         preload: 'auto',
         volume: 0.7,
@@ -408,6 +409,7 @@ const SongRequest: React.FC = () => {
                                 onClick={async () => {
                                   await addSongToRequestPlaylist(song, true);
                                   playNextSong();
+                                  setDefaultPlaylistIndex(index);
                                 }}
                               >
                                 <PlayIcon width={14} height={14} />
