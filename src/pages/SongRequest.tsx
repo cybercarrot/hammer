@@ -809,6 +809,11 @@ const SongRequest: React.FC = () => {
                   </div>
                 </React.Fragment>
               ))}
+              {searchResults.length === 0 && (
+                <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4">
+                  歌曲服务由GD音乐台(music.gdstudio.xyz)提供
+                </div>
+              )}
             </div>
           </div>
         </Box>
