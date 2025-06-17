@@ -31,7 +31,7 @@ const MainLayout: React.FC = () => {
     <Tabs.Root defaultValue="danmaku">
       <Flex direction="column" height="100vh">
         {/* 顶部栏 */}
-        <Box py="2" px="4" className="shadow-sm">
+        <Box p="2" className="shadow-sm">
           <Flex justify="between" align="center">
             <Box>
               <Flex align="baseline" gap="2">
@@ -43,7 +43,7 @@ const MainLayout: React.FC = () => {
             </Box>
 
             {/* 标签切换放在顶部栏中间 */}
-            <Box style={{ position: 'relative', top: '8px' }}>
+            <Box className="relative top-2">
               <Tabs.List color="ruby" size="2">
                 <Tabs.Trigger value="danmaku">弹幕机</Tabs.Trigger>
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
@@ -61,36 +61,26 @@ const MainLayout: React.FC = () => {
         </Box>
 
         {/* 内容区域 */}
-        <Box p="2" style={{ overflow: 'auto', flexGrow: 1 }}>
+        <Container p="2" size="4" height="100%">
           <Tabs.Content value="danmaku" className="h-full data-[state=inactive]:hidden" forceMount>
-            <Container size="4" height="100%" className="h-full">
-              <DanmakuViewer />
-            </Container>
+            <DanmakuViewer />
           </Tabs.Content>
           <Tabs.Content value="control" className="h-full data-[state=inactive]:hidden" forceMount>
-            <Container size="4" height="100%" className="h-full">
-              <ControlPanel />
-            </Container>
+            <ControlPanel />
           </Tabs.Content>
           <Tabs.Content value="song" className="h-full data-[state=inactive]:hidden" forceMount>
-            <Container size="4" height="100%" className="h-full">
-              <SongRequest />
-            </Container>
+            <SongRequest />
           </Tabs.Content>
           <Tabs.Content value="tools" className="h-full data-[state=inactive]:hidden" forceMount>
-            <Container size="4" height="100%" className="h-full">
-              <Tools />
-            </Container>
+            <Tools />
           </Tabs.Content>
           <Tabs.Content value="settings" className="h-full data-[state=inactive]:hidden" forceMount>
-            <Container size="4" height="100%" className="h-full">
-              <Settings />
-            </Container>
+            <Settings />
           </Tabs.Content>
-        </Box>
+        </Container>
 
         {/* 底部栏 */}
-        <Box py="2" px="4" className="shadow-sm border-t" style={{ borderColor: 'var(--gray-5)' }}>
+        <Box p="2" className="border-t [border-color:var(--gray-5)]">
           <Flex justify="end">
             <Flex gap="2" align="center">
               <Badge variant="solid" color="jade">

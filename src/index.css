@@ -10,12 +10,12 @@ body {
 }
 
 /* 添加主题切换的过渡效果 */
-.radix-themes {
+/* .radix-themes {
   transition:
     background-color 0.3s ease,
     border-color 0.3s ease,
     color 0.3s ease;
-}
+} */
 
 /* 导航项激活状态 */
 button.active {
@@ -23,7 +23,6 @@ button.active {
 }
 
 /* 覆盖 aplayer 的样式 */
-
 /* 暗黑模式 */
 .dark .aplayer {
   background-color: var(--color-panel-translucent);

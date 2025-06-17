@@ -10,6 +10,7 @@ import {
   Separator,
   IconButton,
   Tooltip,
+  Box,
 } from '@radix-ui/themes';
 import { ReloadIcon, ClipboardCopyIcon } from '@radix-ui/react-icons';
 import { ConfigProps, uploadCookies } from '../utils/cookies';
@@ -59,45 +60,45 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
   };
 
   // 设置token到webview中的输入框
-  const setSyncToken = (token: string) => {
-    const webview = webviewRef.current;
-    if (webview) {
-      // 直接调用React的onChange方法
-      const scriptToExecute = `
-        {
-          const tokenInput = document.getElementById('laplace-login-sync-token-input');
-          if (tokenInput) {
-            // 设置值
-            tokenInput.value = "${token}";
-            
-            // 查找React属性并触发onChange
-            const reactPropsKey = Object.keys(tokenInput).find(key => key.startsWith('__reactProps$'));
-            if (reactPropsKey) {
-              const reactProps = tokenInput[reactPropsKey];
-              if (reactProps && reactProps.onChange) {
-                // 创建一个合成事件对象
-                const syntheticEvent = {
-                  currentTarget: tokenInput,
-                };
-                // 调用React的onChange处理函数
-                reactProps.onChange(syntheticEvent);
-              }
-            }
-          }
-        }
-      `;
+  // const setSyncToken = (token: string) => {
+  //   const webview = webviewRef.current;
+  //   if (webview) {
+  //     // 直接调用React的onChange方法
+  //     const scriptToExecute = `
+  //       {
+  //         const tokenInput = document.getElementById('laplace-login-sync-token-input');
+  //         if (tokenInput) {
+  //           // 设置值
+  //           tokenInput.value = "${token}";
 
-      webview
-        .executeJavaScript(scriptToExecute)
-        .catch(err => console.error('Error setting token:', err));
-    }
-  };
+  //           // 查找React属性并触发onChange
+  //           const reactPropsKey = Object.keys(tokenInput).find(key => key.startsWith('__reactProps$'));
+  //           if (reactPropsKey) {
+  //             const reactProps = tokenInput[reactPropsKey];
+  //             if (reactProps && reactProps.onChange) {
+  //               // 创建一个合成事件对象
+  //               const syntheticEvent = {
+  //                 currentTarget: tokenInput,
+  //               };
+  //               // 调用React的onChange处理函数
+  //               reactProps.onChange(syntheticEvent);
+  //             }
+  //           }
+  //         }
+  //       }
+  //     `;
+
+  //     webview
+  //       .executeJavaScript(scriptToExecute)
+  //       .catch(err => console.error('Error setting token:', err));
+  //   }
+  // };
 
   // 直接设置token到弹幕机
-  const setTokenToDanmaku = (text: string) => {
-    setSyncToken(text);
-    showToast('已设置同步密钥到LAPLACE', 'success');
-  };
+  // const setTokenToDanmaku = (text: string) => {
+  //   setSyncToken(text);
+  //   showToast('已设置同步密钥到LAPLACE', 'success');
+  // };
 
   // 同步cookie
   // const handleUploadCookies = async () => {
@@ -433,10 +434,91 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
     }
   }, []);
 
+  // 渲染操作模块
+  const renderOperationSection = () => (
+    <Box mb="4">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          操作
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Flex align="center" gap="2">
+        <Text>密钥</Text>
+        <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly>
+          <TextField.Slot side="right">
+            <Tooltip content="复制到剪贴板">
+              <IconButton size="1" variant="ghost" color="blue" onClick={copyToClipboard}>
+                <ClipboardCopyIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="重新生成密钥">
+              <IconButton size="1" variant="ghost" color="red" onClick={generateNewIds}>
+                <ReloadIcon />
+              </IconButton>
+            </Tooltip>
+          </TextField.Slot>
+        </TextField.Root>
+        <Tooltip content="同步登录状态后，自动在 LAPLACE 中完成配置">
+          <Button onClick={handleSyncAndSetOptions} variant="solid" disabled={isLoading}>
+            <Spinner size="1" loading={isLoading} />
+            {isLoading ? '同步中' : '一键同步并设置'}
+          </Button>
+        </Tooltip>
+        {/* <Tooltip content="将密钥、房间号等信息同步到 LAPLACE 中">
+          <Button variant="soft" onClick={setOptions}>
+            仅设置配置
+          </Button>
+        </Tooltip> */}
+        <Tooltip content="新开窗口并放大，更方便配置">
+          <Button variant="soft" onClick={openInNewWindow}>
+            新窗口打开 LAPLACE
+          </Button>
+        </Tooltip>
+        <Tooltip content="与 LAPLACE 页面中的复制作用相同">
+          <Button variant="soft" color="green" onClick={copyOBSLink}>
+            复制 OBS 链接
+          </Button>
+        </Tooltip>
+      </Flex>
+    </Box>
+  );
+
+  // 渲染弹幕配置模块
+  const renderConfigSection = () => (
+    <Flex flexGrow="1" direction="column">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          弹幕配置 (LAPLACE)
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Box
+        position="relative"
+        flexGrow="1"
+        className="border rounded-sm [border-color:var(--gray-5)]"
+      >
+        <webview
+          ref={webviewRef}
+          src={url}
+          className="h-full"
+          // @ts-expect-error 官方类型定义有误
+          allowpopups="true"
+        />
+        {webviewLoading && (
+          <Flex position="absolute" left="3" top="3" align="center" gap="2">
+            <Spinner />
+            <Text color="gray">加载弹幕配置中...</Text>
+          </Flex>
+        )}
+      </Box>
+    </Flex>
+  );
+
   return (
-    <div className="w-full h-full flex flex-col">
+    <Flex direction="column" height="100%">
       {/* 用户提示信息 */}
-      <Callout.Root color="blue" size="1" className="mb-3 !p-2">
+      <Callout.Root color="blue" size="1" className="mb-2 !p-2">
         <Callout.Text>
           初次打开先
           <Badge color="indigo" variant="solid" ml="1" mr="1">
@@ -454,99 +536,9 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
         </Callout.Text>
       </Callout.Root>
 
-      {/* 设置按钮 */}
-      {/* <div className="mb-4">
-        <Flex align="center" className="mb-2">
-          <Text size="1" color="gray">
-            调试
-          </Text>
-          <Separator orientation="horizontal" className="flex-1 ml-2" />
-        </Flex>
-        <Flex gap="2">
-          <Button onClick={() => setTokenToDanmaku(mergedToken)} variant="soft" color="red">
-            设置到弹幕机
-          </Button>
-        </Flex>
-      </div> */}
-
-      {/* 操作模块 */}
-      <div className="mb-4">
-        <Flex align="center" className="mb-2">
-          <Text size="1" color="gray">
-            操作
-          </Text>
-          <Separator orientation="horizontal" className="flex-1 ml-2" />
-        </Flex>
-        <div className="flex gap-2 items-center">
-          <Text size="2" color="gray">
-            密钥
-          </Text>
-          <div className="relative flex-shrink-0">
-            <TextField.Root placeholder="用户密钥" value={mergedToken} readOnly>
-              <TextField.Slot side="right">
-                <Tooltip content="复制到剪贴板">
-                  <IconButton size="1" variant="ghost" color="blue" onClick={copyToClipboard}>
-                    <ClipboardCopyIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip content="重新生成密钥">
-                  <IconButton size="1" variant="ghost" color="red" onClick={generateNewIds}>
-                    <ReloadIcon />
-                  </IconButton>
-                </Tooltip>
-              </TextField.Slot>
-            </TextField.Root>
-          </div>
-          <Tooltip content="同步登录状态后，自动在 LAPLACE 中完成配置">
-            <Button onClick={handleSyncAndSetOptions} variant="solid" disabled={isLoading}>
-              <Spinner size="1" loading={isLoading} />
-              {isLoading ? '同步中' : '一键同步并设置'}
-            </Button>
-          </Tooltip>
-          {/* <Tooltip content="将密钥、房间号等信息同步到 LAPLACE 中">
-            <Button variant="soft" onClick={setOptions}>
-              仅设置配置
-            </Button>
-          </Tooltip> */}
-          <Tooltip content="新开窗口并放大，更方便配置">
-            <Button variant="soft" onClick={openInNewWindow}>
-              新窗口打开 LAPLACE
-            </Button>
-          </Tooltip>
-          <Tooltip content="与 LAPLACE 页面中的复制作用相同">
-            <Button variant="soft" color="green" onClick={copyOBSLink}>
-              复制 OBS 链接
-            </Button>
-          </Tooltip>
-        </div>
-      </div>
-
-      {/* LAPLACE模块 */}
-      <div className="flex flex-1 flex-col">
-        <Flex align="center" className="mb-2">
-          <Text size="1" color="gray">
-            LAPLACE
-          </Text>
-          <Separator orientation="horizontal" className="flex-1 ml-2" />
-        </Flex>
-        <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden relative flex flex-1 flex-col">
-          <webview
-            ref={webviewRef}
-            src={url}
-            className="w-full h-full"
-            style={{ flex: '1 1 auto', minHeight: '0' }}
-            // @ts-expect-error 官方类型定义有误
-            allowpopups="true"
-          />
-          {webviewLoading && (
-            <div className="absolute top-2 left-2 px-3 py-2 flex items-center gap-2">
-              <Spinner size="1" />
-              <span>加载 LAPLACE 中...</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+      {renderOperationSection()}
+      {renderConfigSection()}
+    </Flex>
   );
 };
 

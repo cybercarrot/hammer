@@ -9,6 +9,7 @@ import {
   Separator,
   Callout,
   Badge,
+  Box,
 } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
 
@@ -80,57 +81,57 @@ const ControlPanel: React.FC = () => {
     );
   }
 
+  // 渲染操作模块
+  const renderOperationSection = () => (
+    <Box mb="4">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          操作
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Flex align="center" gap="2">
+        <Text>房间号</Text>
+        <TextField.Root
+          className="w-24"
+          placeholder="房间号"
+          value={localRoomId}
+          onChange={e => setLocalRoomId(e.target.value)}
+        />
+        <Button variant="solid" onClick={() => setShowWebview(true)} disabled={!localRoomId}>
+          打开控制台并连接弹幕
+        </Button>
+      </Flex>
+    </Box>
+  );
+
+  // 渲染控制台面板模块
+  const renderConsolePanel = () => (
+    <Box
+      position="relative"
+      flexGrow="1"
+      className="border rounded-sm [border-color:var(--gray-5)]"
+    >
+      <webview
+        ref={webviewRef}
+        src={`https://chat.laplace.live/dashboard/${localRoomId}`}
+        className="h-full"
+        // @ts-expect-error 官方类型定义有误
+        allowpopups="true"
+      />
+      {webviewLoading && (
+        <Flex position="absolute" left="3" top="3" align="center" gap="2">
+          <Spinner />
+          <Text color="gray">加载控制台中...</Text>
+        </Flex>
+      )}
+    </Box>
+  );
+
   return (
-    <div className="w-full h-full flex flex-col">
-      {!showWebview && (
-        <div className="mb-4">
-          <Flex align="center" className="mb-2">
-            <Text size="1" color="gray">
-              操作
-            </Text>
-            <Separator orientation="horizontal" className="flex-1 ml-2" />
-          </Flex>
-          <div className="flex gap-2 items-center">
-            <Text size="2" color="gray">
-              房间号
-            </Text>
-            <div className="w-24">
-              <TextField.Root
-                placeholder="房间号"
-                value={localRoomId}
-                onChange={e => setLocalRoomId(e.target.value)}
-              />
-            </div>
-            <Button
-              variant="solid"
-              size="2"
-              onClick={() => setShowWebview(true)}
-              disabled={!localRoomId}
-            >
-              打开控制台并连接弹幕
-            </Button>
-          </div>
-        </div>
-      )}
-      {showWebview && (
-        <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden relative flex-1 flex flex-col">
-          <webview
-            ref={webviewRef}
-            src={`https://chat.laplace.live/dashboard/${localRoomId}`}
-            className="w-full h-full"
-            style={{ flex: '1 1 auto', minHeight: '0' }}
-            // @ts-expect-error 官方类型定义有误
-            allowpopups="true"
-          />
-          {webviewLoading && (
-            <div className="absolute top-2 left-2 px-3 py-2 flex items-center gap-2">
-              <Spinner size="1" />
-              <span>加载控制台中...</span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    <Flex direction="column" height="100%">
+      {!showWebview ? renderOperationSection() : renderConsolePanel()}
+    </Flex>
   );
 };
 

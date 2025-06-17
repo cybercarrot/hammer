@@ -30,12 +30,12 @@ const Tools: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <Flex direction="column" height="100%">
       <Flex align="center" className="mb-2">
         <Text size="1" color="gray">
           随机整数生成
         </Text>
-        <Separator orientation="horizontal" className="flex-1 ml-2" />
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
 
       <Form.Root
@@ -130,7 +130,7 @@ const Tools: React.FC = () => {
           </Box>
         )}
       </Form.Root>
-    </div>
+    </Flex>
   );
 };
 

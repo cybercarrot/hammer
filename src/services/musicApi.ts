@@ -27,7 +27,7 @@ export interface SearchResult {
 
 const API_BASE_URL = 'https://music-api.gdstudio.xyz/api.php';
 
-export const searchSongs = async (query: string, source: string, count = 10, page = 1) => {
+export const searchSongs = async (query: string, source: string, count = 20, page = 1) => {
   const { data } = await axios.get<SearchResult[]>(API_BASE_URL, {
     params: {
       types: 'search',

@@ -16,6 +16,7 @@ import {
   Badge,
   Popover,
   ScrollArea,
+  BadgeProps,
 } from '@radix-ui/themes';
 import {
   MagnifyingGlassIcon,
@@ -61,11 +62,17 @@ const SongRequest: React.FC = () => {
   const [showBlacklistConfig, setShowBlacklistConfig] = useState(false);
 
   // 添加黑名单关键词
-  const addToBlacklist = () => {
-    if (newBlacklistItem.trim() && !blacklist.includes(newBlacklistItem.trim())) {
-      setBlacklist([...blacklist, newBlacklistItem.trim()]);
-      setNewBlacklistItem('');
+  const addToBlacklist = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBlacklistItem) {
+      return;
     }
+    if (blacklist.includes(newBlacklistItem)) {
+      showToast('关键词已存在', 'error');
+      return;
+    }
+    setBlacklist([...blacklist, newBlacklistItem]);
+    setNewBlacklistItem('');
   };
 
   // 移除黑名单关键词
@@ -370,455 +377,475 @@ const SongRequest: React.FC = () => {
     };
   }, []);
 
-  // const connectionStatus = {
-  //   disconnected: '未连接',
-  //   connecting: '连接中...',
-  //   connected: '已连接',
-  //   reconnecting: '重新连接中...',
-  // }[connectionState];
+  // 渲染播放器区域
+  const renderPlayer = () => (
+    <Box mb="2">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          播放器
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Box position="relative">
+        {isGettingSongInfo && (
+          <Flex
+            position="absolute"
+            align="center"
+            justify="center"
+            width="100%"
+            height="100%"
+            className="z-1 bg-black/50"
+          >
+            <Spinner size="3" />
+          </Flex>
+        )}
+        <Box ref={playerContainerRef} className="!m-0" />
+      </Box>
+    </Box>
+  );
+
+  // 渲染请求播放列表项
+  const renderRequestPlaylistItem = (song: Song, index: number) => (
+    <Flex
+      position="relative"
+      align="center"
+      p="2"
+      className="group border-b [border-color:var(--gray-5)]"
+      gap="2"
+      key={`req-${index}`}
+    >
+      <Text className="flex-2" size="2" truncate>
+        {song.name}
+      </Text>
+      <Text className="flex-1" color="gray" size="1" truncate>
+        {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
+      </Text>
+      <Text className="flex-1" color="gray" size="1" truncate>
+        {song.requester}
+      </Text>
+      <Box
+        position="absolute"
+        right="3"
+        className="hidden! group-hover:flex! group-hover:[background-color:var(--gray-5)] rounded"
+      >
+        <Tooltip content="立即播放" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={async () => {
+              removeSongFromRequestPlaylist(index);
+              await addSongToRequestPlaylist(song, true);
+              playNextSong();
+            }}
+          >
+            <PlayIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content="置顶" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={() => {
+              removeSongFromRequestPlaylist(index);
+              addSongToRequestPlaylist(song, true);
+            }}
+          >
+            <PinTopIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content="删除" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={() => removeSongFromRequestPlaylist(index)}
+          >
+            <TrashIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Flex>
+  );
+
+  // 渲染默认播放列表项
+  const renderDefaultPlaylistItem = (song: Song, index: number) => {
+    const isCurrent = index === defaultPlaylistIndex;
+    return (
+      <Flex
+        position="relative"
+        align="center"
+        p="2"
+        className="group border-b [border-color:var(--gray-5)]"
+        gap="2"
+        key={`req-${index}`}
+      >
+        {isCurrent && <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-[#ff92ad]"></div>}
+        <Text className="flex-2" size="2" truncate>
+          {song.name}
+        </Text>
+        <Text className="flex-1" color="gray" size="1" truncate>
+          {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
+        </Text>
+        <Box
+          position="absolute"
+          right="3"
+          className="hidden! group-hover:flex! group-hover:[background-color:var(--gray-5)] rounded"
+        >
+          <Tooltip content="立即播放" side="top">
+            <IconButton
+              className="!m-0"
+              variant="ghost"
+              size="2"
+              color="ruby"
+              onClick={async () => {
+                await addSongToRequestPlaylist(song, true);
+                playNextSong();
+                setDefaultPlaylistIndex(index);
+              }}
+            >
+              <PlayIcon width={14} height={14} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip content="置顶点歌" side="top">
+            <IconButton
+              className="!m-0"
+              variant="ghost"
+              size="2"
+              color="ruby"
+              onClick={() => {
+                addSongToRequestPlaylist(song, true);
+              }}
+            >
+              <PinTopIcon width={14} height={14} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip content="点歌" side="top">
+            <IconButton
+              className="!m-0"
+              variant="ghost"
+              size="2"
+              color="ruby"
+              onClick={() => {
+                addSongToRequestPlaylist(song);
+              }}
+            >
+              <PlusIcon width={14} height={14} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Flex>
+    );
+  };
+
+  // 渲染播放列表标签页
+  const renderPlaylistTabs = () => (
+    <Tabs.Root
+      className="flex-auto flex flex-col"
+      value={activeTab}
+      // @ts-expect-error onValueChange类型不匹配
+      onValueChange={setActiveTab}
+    >
+      <Tabs.List color="ruby" size="1">
+        <Tabs.Trigger value="request">点歌列表({requestPlaylist.length})</Tabs.Trigger>
+        <Tabs.Trigger value="default">固定歌单({defaultPlaylist.length})</Tabs.Trigger>
+      </Tabs.List>
+
+      <Tabs.Content value="request" className="flex-auto h-0">
+        <ScrollArea type="auto" scrollbars="vertical">
+          {requestPlaylist.length > 0 ? (
+            requestPlaylist.map((song, index) => renderRequestPlaylistItem(song, index))
+          ) : (
+            <Text as="p" align="center" color="gray" size="2" className="p-4">
+              点歌列表为空
+            </Text>
+          )}
+        </ScrollArea>
+      </Tabs.Content>
+
+      <Tabs.Content value="default" className="flex-auto h-0">
+        <ScrollArea type="auto" scrollbars="vertical">
+          {defaultPlaylist.length > 0 ? (
+            defaultPlaylist.map((song, index) => renderDefaultPlaylistItem(song, index))
+          ) : (
+            <Text as="p" align="center" color="gray" size="2" className="p-4">
+              固定歌单为空
+            </Text>
+          )}
+        </ScrollArea>
+      </Tabs.Content>
+    </Tabs.Root>
+  );
+
+  // 渲染控制按钮区域
+  const renderControls = () => (
+    <Box className="mb-4">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          操作
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Flex gap="2" align="center">
+        {/* 弹幕点歌状态 */}
+        <Badge
+          color={
+            {
+              connected: 'green',
+              disconnected: 'red',
+              reconnecting: 'gray',
+              connecting: 'gray',
+            }[connectionState] as BadgeProps['color']
+          }
+          variant="soft"
+          size="3"
+        >
+          状态：
+          {
+            {
+              connected: '已开启',
+              disconnected: '未开启',
+              reconnecting: '开启中',
+              connecting: '开启中',
+            }[connectionState]
+          }
+          {connectionState === 'connected'
+            ? '已开启'
+            : connectionState === 'disconnected'
+              ? '未开启'
+              : '开启中'}
+        </Badge>
+        {/* 开关弹幕点歌 */}
+        <Button
+          size="2"
+          color={connectionState === 'connected' ? 'red' : 'indigo'}
+          onClick={handleToggleDanmu}
+          disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
+        >
+          {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
+        </Button>
+
+        {/* 点歌前缀配置 */}
+        <Popover.Root>
+          <Popover.Trigger>
+            <Button variant="soft" size="2">
+              点歌前缀
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content className="w-48" size="1">
+            <Text size="1" color="gray" as="p" mb="2">
+              修改实时生效
+            </Text>
+            {Object.entries(prefixConfig).map(([source, prefix]) => (
+              <Flex key={source} gap="2" align="center" mb="2">
+                <Text size="2" className="w-24">
+                  {MUSIC_SOURCES.find(s => s.value === source)?.label || source}:
+                </Text>
+                <TextField.Root
+                  size="2"
+                  value={prefix}
+                  onChange={e => handlePrefixChange(source, e.target.value)}
+                  className="w-16"
+                />
+              </Flex>
+            ))}
+          </Popover.Content>
+        </Popover.Root>
+
+        {/* 点歌黑名单配置 */}
+        <Popover.Root open={showBlacklistConfig} onOpenChange={setShowBlacklistConfig}>
+          <Popover.Trigger>
+            <Button variant="soft" size="2">
+              点歌黑名单
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content className="w-48" size="1">
+            <Text size="1" color="gray" as="p" mb="2">
+              关键词(不区分大小写)
+            </Text>
+            <form onSubmit={addToBlacklist} className="flex gap-2 mb-2">
+              <TextField.Root
+                size="2"
+                placeholder="输入关键词"
+                value={newBlacklistItem}
+                onChange={e => setNewBlacklistItem(e.target.value.trim())}
+              />
+              <Button size="2" type="submit">
+                添加
+              </Button>
+            </form>
+
+            <Text size="2" color="gray" as="p">
+              当前黑名单：
+            </Text>
+            <ScrollArea type="auto" scrollbars="vertical" className="max-h-50">
+              {blacklist.length > 0 ? (
+                <Flex direction="column">
+                  {blacklist.map(keyword => (
+                    <Flex
+                      key={keyword}
+                      justify="between"
+                      align="center"
+                      className="pt-1 pb-1 border-b [border-color:var(--gray-5)]"
+                    >
+                      <Text size="2">{keyword}</Text>
+                      <Tooltip content="删除" side="top">
+                        <IconButton
+                          className="!m-0 !mr-3"
+                          variant="ghost"
+                          size="2"
+                          color="ruby"
+                          onClick={() => removeFromBlacklist(keyword)}
+                        >
+                          <TrashIcon width={14} height={14} />
+                        </IconButton>
+                      </Tooltip>
+                    </Flex>
+                  ))}
+                </Flex>
+              ) : (
+                <Text size="2" color="gray">
+                  无
+                </Text>
+              )}
+            </ScrollArea>
+          </Popover.Content>
+        </Popover.Root>
+      </Flex>
+    </Box>
+  );
+
+  // 渲染搜索区域
+  const renderSearchSection = () => (
+    <Flex direction="column" className="flex-auto h-0">
+      <Flex align="center" className="mb-2">
+        <Text size="1" color="gray">
+          搜索歌曲
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <Select.Root value={searchSource} onValueChange={setSearchSource} size="2">
+          <Select.Trigger className="w-30" />
+          <Select.Content>
+            {MUSIC_SOURCES.map(source => (
+              <Select.Item key={source.value} value={source.value}>
+                {source.label}
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Root>
+        <TextField.Root
+          className="flex-auto"
+          placeholder="搜索歌曲、歌手或专辑"
+          value={searchQuery}
+          size="2"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+        />
+        <Button type="submit" disabled={isSearching} size="2" variant="surface">
+          <MagnifyingGlassIcon />
+          {isSearching ? '搜索中...' : '搜索'}
+        </Button>
+      </form>
+      {renderSearchResults()}
+    </Flex>
+  );
+
+  // 渲染搜索结果
+  const renderSearchResults = () => (
+    <ScrollArea type="auto" scrollbars="vertical">
+      {searchResults.map(song => (
+        <Flex
+          position="relative"
+          align="center"
+          p="2"
+          className="group border-b [border-color:var(--gray-5)]"
+          gap="2"
+          key={`${song.source}-${song.id}`}
+        >
+          <Text className="flex-2" size="2" truncate>
+            {song.name}
+          </Text>
+          <Text className="flex-1" color="gray" size="1" truncate>
+            {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
+          </Text>
+          <Text className="flex-1" color="gray" size="1" truncate>
+            {song.album}
+          </Text>
+          <Box
+            position="absolute"
+            right="3"
+            className="hidden! group-hover:flex! group-hover:[background-color:var(--gray-5)] rounded"
+          >
+            <Tooltip content="立即播放" side="top">
+              <IconButton
+                className="!m-0"
+                variant="ghost"
+                size="2"
+                color="ruby"
+                onClick={async () => {
+                  await addSongToRequestPlaylist(song, true);
+                  playNextSong();
+                }}
+              >
+                <PlayIcon width={14} height={14} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="置顶点歌" side="top">
+              <IconButton
+                className="!m-0"
+                variant="ghost"
+                size="2"
+                color="ruby"
+                onClick={() => {
+                  addSongToRequestPlaylist(song, true);
+                }}
+              >
+                <PinTopIcon width={14} height={14} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="点歌" side="top">
+              <IconButton
+                className="!m-0"
+                variant="ghost"
+                size="2"
+                color="ruby"
+                onClick={() => {
+                  addSongToRequestPlaylist(song);
+                }}
+              >
+                <PlusIcon width={14} height={14} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Flex>
+      ))}
+      {searchResults.length === 0 && (
+        <Text size="2" align="center" color="gray" as="p" className="p-4">
+          歌曲服务由GD音乐台(music.gdstudio.xyz)提供
+        </Text>
+      )}
+    </ScrollArea>
+  );
 
   return (
-    <div className="w-full h-full flex p-4 flex-row space-x-4">
+    <Flex height="100%" maxHeight="100%" gap="2">
       {/* 左侧：播放区域 */}
-      <div className="w-2/5 flex flex-col space-y-4">
-        {/* 播放器容器 */}
-        <div className="flex flex-col">
-          <Flex align="center" className="mb-2">
-            <Text size="1" color="gray">
-              播放器
-            </Text>
-            <Separator orientation="horizontal" className="flex-1 ml-2" />
-          </Flex>
-          <Box className="w-full relative">
-            {isGettingSongInfo && (
-              <Flex
-                align="center"
-                justify="center"
-                className="w-full h-full absolute z-1 bg-black/50"
-              >
-                <Spinner size="3" />
-              </Flex>
-            )}
-            <Box ref={playerContainerRef} className="!m-0" />
-          </Box>
-        </div>
-
-        {/* 点歌列表和固定歌单 */}
-        <Tabs.Root
-          value={activeTab}
-          // @ts-expect-error onValueChange类型不匹配
-          onValueChange={setActiveTab}
-        >
-          <Tabs.List color="ruby" size="1">
-            <Tabs.Trigger value="request">点歌列表({requestPlaylist.length})</Tabs.Trigger>
-            <Tabs.Trigger value="default">固定歌单({defaultPlaylist.length})</Tabs.Trigger>
-          </Tabs.List>
-
-          <Tabs.Content value="request" className="h-full">
-            {requestPlaylist.length > 0 ? (
-              <div className="mt-2">
-                {requestPlaylist.map((song, index) => (
-                  <React.Fragment key={`req-${index}`}>
-                    {index > 0 && <Separator size="4" className="my-1" />}
-                    <div className="group flex items-center p-2 rounded relative">
-                      <div className="w-1/2 truncate pr-2">
-                        <Text className="truncate" size="2">
-                          {song.name}
-                        </Text>
-                      </div>
-                      <div className="w-1/4 truncate px-1">
-                        <Text className="truncate text-gray-500" size="1">
-                          {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
-                        </Text>
-                      </div>
-                      <div className="w-1/4 truncate px-1">
-                        <Text className="truncate text-gray-500" size="1">
-                          {song.requester}
-                        </Text>
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-end pr-2 bg-black/0 group-hover:bg-black/70 transition-background duration-200 rounded overflow-hidden">
-                        <div className="opacity-0 group-hover:opacity-100 flex transition-opacity duration-200">
-                          <Tooltip content="立即播放" side="top">
-                            <IconButton
-                              className="!m-0"
-                              variant="ghost"
-                              size="2"
-                              color="ruby"
-                              onClick={async () => {
-                                removeSongFromRequestPlaylist(index);
-                                await addSongToRequestPlaylist(song, true);
-                                playNextSong();
-                              }}
-                            >
-                              <PlayIcon width={14} height={14} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="置顶" side="top">
-                            <IconButton
-                              className="!m-0"
-                              variant="ghost"
-                              size="2"
-                              color="ruby"
-                              onClick={() => {
-                                removeSongFromRequestPlaylist(index);
-                                addSongToRequestPlaylist(song, true);
-                              }}
-                            >
-                              <PinTopIcon width={14} height={14} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="删除" side="top">
-                            <IconButton
-                              className="!m-0"
-                              variant="ghost"
-                              size="2"
-                              color="ruby"
-                              onClick={() => removeSongFromRequestPlaylist(index)}
-                            >
-                              <TrashIcon width={14} height={14} />
-                            </IconButton>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    </div>
-                  </React.Fragment>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center text-gray-500 text-sm p-4">
-                点歌列表为空
-              </div>
-            )}
-          </Tabs.Content>
-
-          <Tabs.Content value="default" className="h-full">
-            {defaultPlaylist.length > 0 ? (
-              <div className="mt-2">
-                {defaultPlaylist.map((song: Song, index: number) => {
-                  const isCurrent = index === defaultPlaylistIndex;
-                  return (
-                    <React.Fragment key={`def-${index}`}>
-                      {index > 0 && <Separator size="4" className="my-1" />}
-                      <div
-                        className={`group flex items-center p-2 rounded relative ${
-                          isCurrent ? 'bg-gray-100 dark:bg-gray-800/50' : ''
-                        }`}
-                      >
-                        {isCurrent && (
-                          <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-[#ff92ad]"></div>
-                        )}
-                        <div className="w-2/3 truncate pr-2">
-                          <Text className="truncate" size="2">
-                            {song.name}
-                          </Text>
-                        </div>
-                        <div className="w-1/3 truncate px-1">
-                          <Text className="truncate text-gray-500" size="1">
-                            {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
-                          </Text>
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-end pr-2 bg-black/0 group-hover:bg-black/70 transition-background duration-200 rounded overflow-hidden">
-                          <div className="opacity-0 group-hover:opacity-100 flex transition-opacity duration-200">
-                            <Tooltip content="立即播放" side="top">
-                              <IconButton
-                                className="!m-0"
-                                variant="ghost"
-                                size="2"
-                                color="ruby"
-                                onClick={async () => {
-                                  await addSongToRequestPlaylist(song, true);
-                                  playNextSong();
-                                  setDefaultPlaylistIndex(index);
-                                }}
-                              >
-                                <PlayIcon width={14} height={14} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip content="置顶点歌" side="top">
-                              <IconButton
-                                className="!m-0"
-                                variant="ghost"
-                                size="2"
-                                color="ruby"
-                                onClick={() => {
-                                  addSongToRequestPlaylist(song, true);
-                                }}
-                              >
-                                <PinTopIcon width={14} height={14} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip content="点歌" side="top">
-                              <IconButton
-                                className="!m-0"
-                                variant="ghost"
-                                size="2"
-                                color="ruby"
-                                onClick={() => {
-                                  addSongToRequestPlaylist(song);
-                                }}
-                              >
-                                <PlusIcon width={14} height={14} />
-                              </IconButton>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4">
-                固定歌单为空
-              </div>
-            )}
-          </Tabs.Content>
-        </Tabs.Root>
-      </div>
+      <Flex direction="column" className="flex-2">
+        {renderPlayer()}
+        {renderPlaylistTabs()}
+      </Flex>
 
       {/* 右侧：操作区域 */}
-      <div className="w-3/5 flex flex-col">
-        <Flex align="center" className="mb-2">
-          <Text size="1" color="gray">
-            操作
-          </Text>
-          <Separator orientation="horizontal" className="flex-1 ml-2" />
-        </Flex>
-        <Box className="mb-4 space-y-2">
-          <Flex gap="2" align="center">
-            <Badge
-              color={
-                connectionState === 'connected'
-                  ? 'green'
-                  : connectionState === 'disconnected'
-                    ? 'red'
-                    : 'gray'
-              }
-              variant="soft"
-              size="3"
-            >
-              当前状态：
-              {connectionState === 'connected'
-                ? '已开启'
-                : connectionState === 'disconnected'
-                  ? '未开启'
-                  : '开启中'}
-            </Badge>
-            <Button
-              size="2"
-              color={connectionState === 'connected' ? 'red' : 'indigo'}
-              onClick={handleToggleDanmu}
-              disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
-            >
-              {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
-            </Button>
-
-            <Popover.Root>
-              <Popover.Trigger>
-                <Button variant="soft" size="2">
-                  点歌前缀
-                </Button>
-              </Popover.Trigger>
-              <Popover.Content className="w-50" size="1">
-                <Text size="1" color="gray" as="p" mb="2">
-                  修改实时生效
-                </Text>
-                {Object.entries(prefixConfig).map(([source, prefix]) => (
-                  <Flex key={source} gap="2" align="center" mb="2">
-                    <Text size="1" className="w-18">
-                      {MUSIC_SOURCES.find(s => s.value === source)?.label || source}:
-                    </Text>
-                    <TextField.Root
-                      size="1"
-                      value={prefix}
-                      onChange={e => handlePrefixChange(source, e.target.value)}
-                      className="w-18"
-                    />
-                  </Flex>
-                ))}
-              </Popover.Content>
-            </Popover.Root>
-
-            <Popover.Root open={showBlacklistConfig} onOpenChange={setShowBlacklistConfig}>
-              <Popover.Trigger>
-                <Button variant="soft" size="2">
-                  点歌黑名单
-                </Button>
-              </Popover.Trigger>
-              <Popover.Content className="w-50" size="1">
-                <Text size="1" color="gray" as="p" mb="2">
-                  关键词(不区分大小写)
-                </Text>
-                <Flex gap="2" mb="2">
-                  <TextField.Root
-                    size="1"
-                    placeholder="输入关键词"
-                    value={newBlacklistItem}
-                    onChange={e => setNewBlacklistItem(e.target.value.trim())}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        addToBlacklist();
-                      }
-                    }}
-                  />
-                  <Button size="1" onClick={addToBlacklist}>
-                    添加
-                  </Button>
-                </Flex>
-
-                <Text size="1" color="gray" as="p" mb="2">
-                  当前黑名单：
-                </Text>
-                <ScrollArea type="always" scrollbars="vertical" className="max-h-50">
-                  {blacklist.length > 0 ? (
-                    <Flex direction="column" gap="1">
-                      {blacklist.map(keyword => (
-                        <Flex
-                          key={keyword}
-                          justify="between"
-                          align="center"
-                          className="p-1 mr-2 hover:bg-black/20 rounded"
-                        >
-                          <Text size="1">{keyword}</Text>
-                          <Tooltip content="删除" side="top">
-                            <IconButton
-                              className="!m-0"
-                              variant="ghost"
-                              size="2"
-                              color="ruby"
-                              onClick={() => removeFromBlacklist(keyword)}
-                            >
-                              <TrashIcon width={14} height={14} />
-                            </IconButton>
-                          </Tooltip>
-                        </Flex>
-                      ))}
-                    </Flex>
-                  ) : (
-                    <Text size="1" color="gray">
-                      无
-                    </Text>
-                  )}
-                </ScrollArea>
-              </Popover.Content>
-            </Popover.Root>
-          </Flex>
-        </Box>
-
-        {/* 搜索区域 */}
-        <Flex align="center" className="mb-2">
-          <Text size="1" color="gray">
-            搜索歌曲
-          </Text>
-          <Separator orientation="horizontal" className="flex-1 ml-2" />
-        </Flex>
-        <Box className="flex-1 flex flex-col overflow-hidden">
-          <form onSubmit={handleSearch}>
-            <Flex gap="2">
-              <Select.Root value={searchSource} onValueChange={setSearchSource} size="2">
-                <Select.Trigger className="w-30" />
-                <Select.Content>
-                  {MUSIC_SOURCES.map(source => (
-                    <Select.Item key={source.value} value={source.value}>
-                      {source.label}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-              <TextField.Root
-                className="flex-1"
-                placeholder="搜索歌曲、歌手或专辑"
-                value={searchQuery}
-                size="2"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchQuery(e.target.value)
-                }
-              />
-              <Button type="submit" disabled={isSearching} size="2" variant="surface">
-                <MagnifyingGlassIcon width="14" height="14" className="mr-1" />
-                {isSearching ? '搜索中...' : '搜索'}
-              </Button>
-            </Flex>
-          </form>
-
-          <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-            <div className="mt-2">
-              {searchResults.map((song, index) => (
-                <React.Fragment key={`${song.source}-${song.id}`}>
-                  {index > 0 && <Separator size="4" className="my-1" />}
-                  <div className="group flex items-center p-2 rounded relative">
-                    <div className="w-1/2 truncate pr-2">
-                      <Text className="truncate" size="2">
-                        {song.name}
-                      </Text>
-                    </div>
-                    <div className="w-1/4 truncate px-1">
-                      <Text className="truncate text-gray-500" size="1">
-                        {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
-                      </Text>
-                    </div>
-                    <div className="w-1/4 truncate pl-1">
-                      <Text className="truncate text-gray-500" size="1">
-                        {song.album}
-                      </Text>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-end pr-2 bg-black/0 group-hover:bg-black/70 transition-background duration-200 rounded overflow-hidden">
-                      <div className="opacity-0 group-hover:opacity-100 flex transition-opacity duration-200">
-                        <Tooltip content="立即播放" side="top">
-                          <IconButton
-                            className="!m-0"
-                            variant="ghost"
-                            size="2"
-                            color="ruby"
-                            onClick={async () => {
-                              await addSongToRequestPlaylist(song, true);
-                              playNextSong();
-                            }}
-                          >
-                            <PlayIcon width={14} height={14} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip content="置顶点歌" side="top">
-                          <IconButton
-                            className="!m-0"
-                            variant="ghost"
-                            size="2"
-                            color="ruby"
-                            onClick={() => {
-                              addSongToRequestPlaylist(song, true);
-                            }}
-                          >
-                            <PinTopIcon width={14} height={14} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip content="点歌" side="top">
-                          <IconButton
-                            className="!m-0"
-                            variant="ghost"
-                            size="2"
-                            color="ruby"
-                            onClick={() => {
-                              addSongToRequestPlaylist(song);
-                            }}
-                          >
-                            <PlusIcon width={14} height={14} />
-                          </IconButton>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </div>
-                </React.Fragment>
-              ))}
-              {searchResults.length === 0 && (
-                <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4">
-                  歌曲服务由GD音乐台(music.gdstudio.xyz)提供
-                </div>
-              )}
-            </div>
-          </div>
-        </Box>
-      </div>
-    </div>
+      <Flex direction="column" className="flex-3">
+        {renderControls()}
+        {renderSearchSection()}
+      </Flex>
+    </Flex>
   );
 };
 

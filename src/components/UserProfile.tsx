@@ -30,21 +30,15 @@ const UserProfile: React.FC = () => {
           {roomId && (
             <Flex align="center" gap="1" className="mr-1">
               <Tooltip content="点击复制直播间ID">
-                <Text
-                  size="1"
-                  color="gray"
-                  onClick={copyRoomId}
-                  style={{ cursor: 'pointer' }}
-                  className="hover:text-blue-500"
-                >
+                <Button size="1" variant="ghost" color="gray" onClick={copyRoomId}>
                   直播间: {roomId}
-                </Text>
+                </Button>
               </Tooltip>
             </Flex>
           )}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
-              <Button variant="ghost" className="!m-0">
+              <Button variant="ghost" color="gray" className="!m-0">
                 <Avatar size="2" src={avatar} fallback={username?.[0] || 'U'} />
               </Button>
             </DropdownMenu.Trigger>

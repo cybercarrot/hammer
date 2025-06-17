@@ -177,36 +177,20 @@ const QRCodeLogin: React.FC = () => {
           <Dialog.Title>关联账号信息</Dialog.Title>
           <Flex direction="column" align="center" gap="3">
             {qrImageUrl ? (
-              <Box
-                style={{
-                  position: 'relative',
-                  marginTop: '8px',
-                }}
-              >
+              <Box className="relative mt-2">
                 <img
                   src={qrImageUrl}
                   alt="哔哩哔哩二维码登录"
                   width={200}
                   height={200}
-                  style={{
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    opacity: isLoading ? 0.5 : 1,
-                  }}
+                  className="border border-gray-300 rounded-sm opacity-50"
+                  style={{ opacity: isLoading ? 0.5 : 1 }}
                 />
                 {isLoading && (
                   <Text
                     as="div"
                     size="2"
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                      padding: '8px',
-                      borderRadius: '4px',
-                    }}
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-sm"
                   >
                     生成中...
                   </Text>
@@ -214,15 +198,9 @@ const QRCodeLogin: React.FC = () => {
               </Box>
             ) : (
               <Box
-                style={{
-                  width: 200,
-                  height: 200,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                }}
+                className="flex items-center justify-center border border-gray-300 rounded-sm"
+                height="200"
+                width="200"
               >
                 <Text color="gray">{isLoading ? '生成二维码中...' : '等待生成二维码'}</Text>
               </Box>
@@ -249,17 +227,7 @@ const QRCodeLogin: React.FC = () => {
           </Flex>
 
           <button
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              appearance: 'none',
-              border: 'none',
-              backgroundColor: 'transparent',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              padding: 5,
-            }}
+            className="absolute top-2 right-2 appearance-none border-none bg-transparent rounded-full cursor-pointer p-2"
             aria-label="Close"
             onClick={() => setOpen(false)}
           >
