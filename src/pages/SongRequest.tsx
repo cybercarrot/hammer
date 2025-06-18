@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGetState } from 'ahooks';
 import { useToast } from '../context/ToastContext';
-import { Song, useSongStore } from '../store/songStore';
-import { useSettingStore, type PrefixConfig } from '../store/settingStore';
+import { useSongStore, Song, MUSIC_SOURCES, MusicSourceValue } from '../store/songStore';
+import { useSettingStore } from '../store/settingStore';
 import {
   Text,
   Button,
@@ -52,7 +52,6 @@ const SongRequest: React.FC = () => {
     defaultPlaylistIndex,
     getDefaultPlaylistIndex,
     setDefaultPlaylistIndex,
-    MUSIC_SOURCES,
   } = useSongStore();
 
   // 弹幕连接
@@ -599,7 +598,7 @@ const SongRequest: React.FC = () => {
             <Text size="1" color="gray" as="p" mb="2">
               修改实时生效
             </Text>
-            {Object.entries(prefixConfig).map(([source, prefix]) => (
+            {Object.entries(prefixConfig).map(([source, prefix]: [MusicSourceValue, string]) => (
               <Flex key={source} gap="2" align="center" mb="2">
                 <Text size="2" className="w-24">
                   {MUSIC_SOURCES.find(s => s.value === source)?.label || source}:
@@ -607,7 +606,7 @@ const SongRequest: React.FC = () => {
                 <TextField.Root
                   size="2"
                   value={prefix}
-                  onChange={e => updatePrefixConfig(source as keyof PrefixConfig, e.target.value)}
+                  onChange={e => updatePrefixConfig(source, e.target.value)}
                   className="w-16"
                 />
               </Flex>

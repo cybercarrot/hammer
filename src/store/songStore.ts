@@ -2,19 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SearchResult } from '../services/musicApi';
 
-export interface MusicSource {
-  value: string;
-  label: string;
-}
-
 export type Song = SearchResult & {
   requester?: string;
 };
 
 interface SongState {
-  // 音乐源列表
-  MUSIC_SOURCES: MusicSource[];
-
   // 默认播放列表
   defaultPlaylist: Song[];
   // 当前播放索引
@@ -39,11 +31,11 @@ interface SongState {
 const STORAGE_KEY = 'song-store';
 
 // 音乐源列表
-const MUSIC_SOURCES: MusicSource[] = [
-  { value: 'netease', label: '网易云音乐' },
-  { value: 'kuwo', label: '酷我音乐' },
-  { value: 'tidal', label: 'Tidal' },
-  { value: 'joox', label: 'JOOX' },
+export const MUSIC_SOURCES = [
+  { value: 'netease', label: '网易云音乐', prefix: '点歌' },
+  { value: 'kuwo', label: '酷我音乐', prefix: '点k歌' },
+  { value: 'tidal', label: 'Tidal', prefix: '点t歌' },
+  { value: 'joox', label: 'JOOX', prefix: '点j歌' },
   // 已禁用的音乐源:
   // { value: 'tencent', label: 'QQ音乐' },
   // { value: 'kugou', label: '酷狗音乐' },
@@ -53,7 +45,9 @@ const MUSIC_SOURCES: MusicSource[] = [
   // { value: 'qobuz', label: 'Qobuz' },
   // { value: 'deezer', label: 'Deezer' },
   // { value: 'ximalaya', label: '喜马拉雅' },
-];
+  // { value: 'apple', label: '苹果' },
+] as const;
+export type MusicSourceValue = (typeof MUSIC_SOURCES)[number]['value'];
 
 // 默认播放列表
 const DEFAULT_PLAYLIST: Song[] = [
@@ -89,7 +83,6 @@ const DEFAULT_PLAYLIST: Song[] = [
 export const useSongStore = create<SongState>()(
   persist(
     (set, get) => ({
-      MUSIC_SOURCES,
       defaultPlaylist: DEFAULT_PLAYLIST,
       defaultPlaylistIndex: 0,
 

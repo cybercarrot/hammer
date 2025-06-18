@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import shortUuid from 'short-uuid';
+import { MUSIC_SOURCES, MusicSourceValue } from './songStore';
 
 type ThemeType = 'light' | 'dark';
 
@@ -9,14 +10,6 @@ interface DanmakuConfig {
   password: string;
   uuid: string;
 }
-
-// 前缀配置类型
-export type PrefixConfig = {
-  netease: string;
-  kuwo: string;
-  tidal: string;
-  joox: string;
-};
 
 // 设置状态接口
 interface SettingState {
@@ -41,11 +34,11 @@ interface SettingState {
   getMergedToken: () => string;
 
   // 前缀配置
-  prefixConfig: PrefixConfig;
+  prefixConfig: Record<MusicSourceValue, string>;
   // 获取前缀配置（用于在闭包中获取最新值）
-  getPrefixConfig: () => PrefixConfig;
+  getPrefixConfig: () => Record<MusicSourceValue, string>;
   // 更新前缀配置
-  updatePrefixConfig: (source: keyof PrefixConfig, value: string) => void;
+  updatePrefixConfig: (source: MusicSourceValue, value: string) => void;
 
   // 黑名单关键词
   blacklist: string[];
@@ -129,12 +122,13 @@ export const useSettingStore = create<SettingState>()(
       },
 
       // 前缀配置
-      prefixConfig: {
-        netease: '点歌',
-        kuwo: '点k歌',
-        tidal: '点t歌',
-        joox: '点j歌',
-      },
+      prefixConfig: MUSIC_SOURCES.reduce(
+        (acc, source) => {
+          acc[source.value] = source.prefix;
+          return acc;
+        },
+        {} as Record<MusicSourceValue, string>
+      ),
       // 获取前缀配置（用于在闭包中获取最新值）
       getPrefixConfig: () => get().prefixConfig,
       updatePrefixConfig: (source, value) => {
