@@ -1,5 +1,33 @@
 import axios from 'axios';
 
+// 缓存配置
+const SONG_INFO_CACHE_EXPIRE = 30 * 60000; // 30分钟
+
+interface CachedSongInfo {
+  name: string;
+  artist: string;
+  url: string;
+  cover: string;
+  lrc: string | null;
+}
+
+interface SongInfoCache {
+  data: CachedSongInfo;
+  timestamp: number;
+}
+
+const songInfoCache = new Map<string, SongInfoCache>();
+
+// 生成缓存键的辅助函数
+const getCacheKey = (song: SearchResult): string => {
+  return `${song.source}:${song.id}`;
+};
+
+// 检查缓存是否仍然有效的辅助函数
+const isCacheValid = (timestamp: number): boolean => {
+  return Date.now() - timestamp < SONG_INFO_CACHE_EXPIRE;
+};
+
 export interface SongUrlResponse {
   url: string;
   br: string;
@@ -81,17 +109,34 @@ export const getLyric = async (source: string, lyricId: string) => {
 };
 
 export const getSongInfo = async (song: SearchResult) => {
+  const cacheKey = getCacheKey(song);
+  const cachedData = songInfoCache.get(cacheKey);
+
+  // 如果缓存存在且仍然有效，则返回缓存数据
+  if (cachedData && isCacheValid(cachedData.timestamp)) {
+    return cachedData.data;
+  }
+
+  // 如果缓存无效或不存在，则获取新数据
   const [url, cover, lrc] = await Promise.all([
     getSongUrl(song.source, song.id),
     getAlbumCover(song.source, song.pic_id),
     getLyric(song.source, song.lyric_id),
   ]);
 
-  return {
+  const songInfo: CachedSongInfo = {
     name: song.name,
     artist: Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist,
     url,
     cover,
-    lrc,
+    lrc: lrc || null,
   };
+
+  // 更新缓存
+  songInfoCache.set(cacheKey, {
+    data: songInfo,
+    timestamp: Date.now(),
+  });
+
+  return songInfo;
 };
