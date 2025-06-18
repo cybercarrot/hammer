@@ -40,7 +40,7 @@ const SongRequest: React.FC = () => {
   // 播放器
   const playerRef = useRef<APlayer | null>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<'request' | 'default'>('request');
+  const [activeTab, setActiveTab] = useState<'request' | 'default'>('default');
 
   // 点歌列表
   const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<Song[]>([]);
@@ -53,6 +53,11 @@ const SongRequest: React.FC = () => {
     getDefaultPlaylistIndex,
     setDefaultPlaylistIndex,
   } = useSongStore();
+
+  // 当前播放的歌曲
+  const [, setCurrentSong, getCurrentSong] = useGetState<Song | null>(null);
+  // 播放历史
+  const [playHistory, setPlayHistory] = useState<Song[]>([]);
 
   // 弹幕连接
   const clientRef = useRef<LaplaceEventBridgeClient | null>(null);
@@ -91,39 +96,61 @@ const SongRequest: React.FC = () => {
     setRequestPlaylist(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 播放下一首
-  const playNextSong = () => {
-    const currentRequestPlaylist = getRequestPlaylist();
-    const currentDefaultPlaylist = getDefaultPlaylist(); // 使用getter获取最新的播放列表
-    const currentDefaultPlaylistIdx = getDefaultPlaylistIndex(); // 使用getter获取最新的播放索引
+  // 添加到播放历史
+  const addToPlayHistory = (song: Song) => {
+    setPlayHistory(prev => {
+      // 添加到开头并限制最多20条
+      return [song, ...prev].slice(0, 20);
+    });
+  };
 
-    if (currentRequestPlaylist.length <= 0 && currentDefaultPlaylist.length <= 0) {
-      showToast('播放列表为空', 'info');
-      console.log('播放列表为空');
-      return;
+  // 播放下一首
+  const playNextSong = (justLoad = false) => {
+    const currentRequestPlaylist = getRequestPlaylist();
+    const currentDefaultPlaylist = getDefaultPlaylist();
+    const currentSong = getCurrentSong();
+    let nextSong: Song | null = null;
+
+    // 将当前播放的歌曲添加到历史记录
+    if (currentSong) {
+      addToPlayHistory(currentSong);
     }
 
-    let song: Song;
+    // 获取下一首歌曲
     if (currentRequestPlaylist.length > 0) {
-      // 如果点歌列表有歌，取出一首插队播放
-      song = currentRequestPlaylist[0];
+      // 从点歌列表获取下一首
+      nextSong = currentRequestPlaylist[0];
       setRequestPlaylist(currentRequestPlaylist.slice(1));
     } else if (currentDefaultPlaylist.length > 0) {
-      // 如果点歌列表没有歌，播放默认歌单
-      // 先只支持列表循环播放
-      const nextIndex = (currentDefaultPlaylistIdx + 1) % currentDefaultPlaylist.length;
-      song = currentDefaultPlaylist[nextIndex];
+      // 从默认歌单获取下一首
+      const currentIndex = getDefaultPlaylistIndex();
+      const nextIndex = (currentIndex + 1) % currentDefaultPlaylist.length;
+      nextSong = currentDefaultPlaylist[nextIndex];
       setDefaultPlaylistIndex(nextIndex);
       setActiveTab('default');
     }
 
+    // 检查是否还有歌曲可播
+    if (!nextSong) {
+      showToast('播放列表为空', 'info');
+      setCurrentSong(null);
+      return;
+    }
+
+    // 更新当前播放歌曲
+    setCurrentSong(nextSong);
+
     // 获取播放链接并播放
     setIsGettingSongInfo(true);
-    getSongInfo(song)
+    getSongInfo(nextSong)
       .then(songInfo => {
-        playerRef.current.list.clear();
-        playerRef.current.list.add(songInfo);
-        playerRef.current.play();
+        if (playerRef.current) {
+          playerRef.current.list.clear();
+          playerRef.current.list.add(songInfo);
+          if (!justLoad) {
+            playerRef.current.play();
+          }
+        }
         setIsGettingSongInfo(false);
       })
       .catch(error => {
@@ -135,7 +162,6 @@ const SongRequest: React.FC = () => {
 
   // 开关弹幕点歌
   const { consoleConnected, setConsoleConnected } = useSettingStore();
-
   const handleToggleDanmu = async () => {
     if (connectionState === 'connecting' || connectionState === 'reconnecting') {
       showToast('弹幕正在连接中', 'info');
@@ -313,24 +339,14 @@ const SongRequest: React.FC = () => {
 
       // 如果固定歌单有歌，就先加载第一首
       if (defaultPlaylist.length > 0) {
-        setIsGettingSongInfo(true);
-        getSongInfo(defaultPlaylist[0])
-          .then(songInfo => {
-            playerRef.current.list.clear();
-            playerRef.current.list.add(songInfo);
-            setIsGettingSongInfo(false);
-          })
-          .catch(error => {
-            console.error('获取歌曲信息失败:', error);
-            showToast('获取歌曲信息失败', 'error');
-            setIsGettingSongInfo(false);
-          });
+        addSongToRequestPlaylist(defaultPlaylist[defaultPlaylistIndex], true).then(() => {
+          playNextSong(true);
+        });
       }
     }
 
     // 清理函数
     return () => {
-      // 注意：客户端实例现在在 handleToggleDanmu 中管理
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -365,7 +381,7 @@ const SongRequest: React.FC = () => {
     </Box>
   );
 
-  // 渲染请求播放列表项
+  // 渲染点歌播放列表项
   const renderRequestPlaylistItem = (song: Song, index: number) => (
     <Flex
       position="relative"
@@ -503,6 +519,71 @@ const SongRequest: React.FC = () => {
     );
   };
 
+  // 渲染播放历史项
+  const renderPlayHistoryItem = (song: Song, index: number) => (
+    <Flex
+      position="relative"
+      align="center"
+      p="2"
+      className="group border-b [border-color:var(--gray-5)]"
+      gap="2"
+      key={`history-${index}`}
+    >
+      <Text className="flex-2" size="2" truncate>
+        {song.name}
+      </Text>
+      <Text className="flex-1" color="gray" size="1" truncate>
+        {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
+      </Text>
+      <Box
+        position="absolute"
+        right="3"
+        className="hidden! group-hover:flex! group-hover:[background-color:var(--gray-5)] rounded"
+      >
+        <Tooltip content="立即播放" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={async () => {
+              await addSongToRequestPlaylist(song, true);
+              playNextSong();
+            }}
+          >
+            <PlayIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content="置顶点歌" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={() => {
+              addSongToRequestPlaylist(song, true);
+            }}
+          >
+            <PinTopIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content="点歌" side="top">
+          <IconButton
+            className="!m-0"
+            variant="ghost"
+            size="2"
+            color="ruby"
+            onClick={() => {
+              addSongToRequestPlaylist(song);
+            }}
+          >
+            <PlusIcon width={14} height={14} />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Flex>
+  );
+
   // 渲染播放列表标签页
   const renderPlaylistTabs = () => (
     <Tabs.Root
@@ -514,6 +595,7 @@ const SongRequest: React.FC = () => {
       <Tabs.List color="ruby" size="1">
         <Tabs.Trigger value="request">点歌列表({requestPlaylist.length})</Tabs.Trigger>
         <Tabs.Trigger value="default">固定歌单({defaultPlaylist.length})</Tabs.Trigger>
+        <Tabs.Trigger value="history">播放历史({playHistory.length})</Tabs.Trigger>
       </Tabs.List>
 
       <Tabs.Content value="request" className="flex-auto h-0">
@@ -535,6 +617,18 @@ const SongRequest: React.FC = () => {
           ) : (
             <Text as="p" align="center" color="gray" size="2" className="p-4">
               固定歌单为空
+            </Text>
+          )}
+        </ScrollArea>
+      </Tabs.Content>
+
+      <Tabs.Content value="history" className="flex-auto h-0">
+        <ScrollArea type="auto" scrollbars="vertical">
+          {playHistory.length > 0 ? (
+            playHistory.map((song, index) => renderPlayHistoryItem(song, index))
+          ) : (
+            <Text as="p" align="center" color="gray" size="2" className="p-4">
+              暂无播放历史
             </Text>
           )}
         </ScrollArea>
