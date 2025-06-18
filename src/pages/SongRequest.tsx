@@ -81,18 +81,16 @@ const SongRequest: React.FC = () => {
   const [isGettingSongInfo, setIsGettingSongInfo] = useState(false);
 
   // 添加歌曲到点歌列表
-  const addSongToRequestPlaylist = async (_song: Song, top = false) => {
-    // 需要是异步方法，需要等待setRequestPlaylist生效
+  const addSongToRequestPlaylist = (_song: Song, top = false) => {
     const song = {
       ..._song,
       requester: _song.requester || '[系统]',
     };
     setRequestPlaylist(prev => (top ? [song, ...prev] : [...prev, song]));
-    // setActiveTab('request');
   };
 
   // 从点歌列表中移除歌曲
-  const removeSongFromRequestPlaylist = async (index: number) => {
+  const removeSongFromRequestPlaylist = (index: number) => {
     setRequestPlaylist(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -105,7 +103,9 @@ const SongRequest: React.FC = () => {
   };
 
   // 播放下一首
-  const playNextSong = (justLoad = false) => {
+  const playNextSong = async (justLoad = false) => {
+    // 需要异步一下，防止 requestPlaylist 还未更新
+    await Promise.resolve();
     const currentRequestPlaylist = getRequestPlaylist();
     const currentDefaultPlaylist = getDefaultPlaylist();
     const currentSong = getCurrentSong();
@@ -284,7 +284,7 @@ const SongRequest: React.FC = () => {
           ...results[0],
           requester, // 添加点歌者信息
         };
-        await addSongToRequestPlaylist(song);
+        addSongToRequestPlaylist(song);
         const artistName = Array.isArray(song.artist)
           ? song.artist.join('/')
           : song.artist || '未知艺术家';
@@ -339,9 +339,8 @@ const SongRequest: React.FC = () => {
 
       // 如果固定歌单有歌，就先加载第一首
       if (defaultPlaylist.length > 0) {
-        addSongToRequestPlaylist(defaultPlaylist[defaultPlaylistIndex], true).then(() => {
-          playNextSong(true);
-        });
+        addSongToRequestPlaylist(defaultPlaylist[defaultPlaylistIndex]);
+        playNextSong(true);
       }
     }
 
@@ -413,7 +412,7 @@ const SongRequest: React.FC = () => {
             color="ruby"
             onClick={async () => {
               removeSongFromRequestPlaylist(index);
-              await addSongToRequestPlaylist(song, true);
+              addSongToRequestPlaylist(song, true);
               playNextSong();
             }}
           >
@@ -479,8 +478,8 @@ const SongRequest: React.FC = () => {
               variant="ghost"
               size="2"
               color="ruby"
-              onClick={async () => {
-                await addSongToRequestPlaylist(song, true);
+              onClick={() => {
+                addSongToRequestPlaylist(song, true);
                 playNextSong();
                 setDefaultPlaylistIndex(index);
               }}
@@ -546,8 +545,8 @@ const SongRequest: React.FC = () => {
             variant="ghost"
             size="2"
             color="ruby"
-            onClick={async () => {
-              await addSongToRequestPlaylist(song, true);
+            onClick={() => {
+              addSongToRequestPlaylist(song, true);
               playNextSong();
             }}
           >
@@ -841,8 +840,8 @@ const SongRequest: React.FC = () => {
                 variant="ghost"
                 size="2"
                 color="ruby"
-                onClick={async () => {
-                  await addSongToRequestPlaylist(song, true);
+                onClick={() => {
+                  addSongToRequestPlaylist(song, true);
                   playNextSong();
                 }}
               >
