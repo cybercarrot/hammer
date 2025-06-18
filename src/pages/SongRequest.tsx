@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGetState } from 'ahooks';
 import { useToast } from '../context/ToastContext';
+import { Song, useSongStore } from '../store/songStore';
+import { useSettingStore, type PrefixConfig } from '../store/settingStore';
 import {
   Text,
   Button,
@@ -31,139 +33,50 @@ import APlayer from 'aplayer';
 import 'aplayer/dist/APlayer.min.css';
 import { searchSongs, getSongInfo, SearchResult } from '../services/musicApi';
 
-const MUSIC_SOURCES = [
-  { value: 'netease', label: '网易云音乐' },
-  // { value: 'tencent', label: 'QQ音乐' },
-  // { value: 'kugou', label: '酷狗音乐' },
-  { value: 'kuwo', label: '酷我音乐' },
-  // { value: 'migu', label: '咪咕音乐' },
-  { value: 'tidal', label: 'Tidal' },
-  // { value: 'spotify', label: 'Spotify' },
-  // { value: 'ytmusic', label: 'YouTube Music' },
-  // { value: 'qobuz', label: 'Qobuz' },
-  { value: 'joox', label: 'JOOX' },
-  // { value: 'deezer', label: 'Deezer' },
-  // { value: 'ximalaya', label: '喜马拉雅' },
-];
-
 // MARK: 点歌机
 const SongRequest: React.FC = () => {
+  const { showToast } = useToast();
+
+  // 播放器
+  const playerRef = useRef<APlayer | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<'request' | 'default'>('request');
+
+  // 点歌列表
+  const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<Song[]>([]);
+
+  // 默认播放歌单和索引
+  const {
+    defaultPlaylist,
+    getDefaultPlaylist,
+    defaultPlaylistIndex,
+    getDefaultPlaylistIndex,
+    setDefaultPlaylistIndex,
+    MUSIC_SOURCES,
+  } = useSongStore();
+
+  // 弹幕连接
   const clientRef = useRef<LaplaceEventBridgeClient | null>(null);
-  const [prefixConfig, setPrefixConfig, getPrefixConfig] = useGetState({
-    netease: '点歌',
-    kuwo: '点k歌',
-    tidal: '点t歌',
-    joox: '点j歌',
-  });
-
-  // 黑名单关键词
-  const [blacklist, setBlacklist] = useState<string[]>([]);
-  const [newBlacklistItem, setNewBlacklistItem] = useState('');
-  const [showBlacklistConfig, setShowBlacklistConfig] = useState(false);
-
-  // 添加黑名单关键词
-  const addToBlacklist = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBlacklistItem) {
-      return;
-    }
-    if (blacklist.includes(newBlacklistItem)) {
-      showToast('关键词已存在', 'error');
-      return;
-    }
-    setBlacklist([...blacklist, newBlacklistItem]);
-    setNewBlacklistItem('');
-  };
-
-  // 移除黑名单关键词
-  const removeFromBlacklist = (keyword: string) => {
-    setBlacklist(blacklist.filter(item => item !== keyword));
-  };
-
-  // 检查是否包含黑名单关键词
-  const hasBlacklistedKeyword = (text: string) => {
-    return blacklist.some(keyword => text.toLowerCase().includes(keyword.toLowerCase()));
-  };
   const [connectionState, setConnectionState] = useState<
     'disconnected' | 'connecting' | 'connected' | 'reconnecting'
   >('disconnected');
+
+  // 前缀配置
+  const { prefixConfig, updatePrefixConfig, getPrefixConfig } = useSettingStore();
+
+  // 黑名单关键词配置
+  const { blacklist, addToBlacklist, removeFromBlacklist, hasBlacklistedKeyword } =
+    useSettingStore();
+  const [newBlacklistItem, setNewBlacklistItem] = useState('');
+
+  // 歌曲搜索
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSource, setSearchSource] = useState('netease');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isGettingSongInfo, setIsGettingSongInfo] = useState(false);
-  const [activeTab, setActiveTab] = useState<'request' | 'default'>('request');
-  const { showToast } = useToast();
 
-  const playerRef = useRef<APlayer | null>(null);
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-
-  // 点歌列表
-  type Song = SearchResult & {
-    requester?: string;
-  };
-  const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<Song[]>([]);
-
-  // 固定歌单（默认播放列表）
-  const [defaultPlaylist, , getDefaultPlaylist] = useGetState<Song[]>([
-    {
-      album: 'My Story,Your Song 经典全记录',
-      artist: ['孙燕姿'],
-      id: '287221',
-      lyric_id: '287221',
-      name: '绿光',
-      pic_id: '109951166887388958',
-      source: 'netease',
-    },
-    {
-      album: '火车驶向云外，梦安魂于九霄',
-      artist: ['刺猬'],
-      id: '528272281',
-      lyric_id: '528272281',
-      name: '火车驶向云外，梦安魂于九霄',
-      pic_id: '109951163102691938',
-      source: 'netease',
-    },
-    {
-      album: '七里香',
-      artist: ['周杰伦'],
-      id: '94237',
-      lyric_id: '94237',
-      name: '七里香',
-      pic_id: '120/s4s81/2/3200337129.jpg',
-      source: 'kuwo',
-    },
-  ]);
-
-  const [defaultPlaylistIndex, setDefaultPlaylistIndex, getDefaultPlaylistIndex] =
-    useGetState<number>(0);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-
-    try {
-      const results = await searchSongs(searchQuery, searchSource);
-
-      setSearchResults(results);
-
-      if (results.length === 0) {
-        showToast('未找到相关歌曲', 'info');
-      }
-    } catch (error) {
-      console.error('搜索歌曲出错:', error);
-      showToast('搜索歌曲出错', 'error');
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
+  // 添加歌曲到点歌列表
   const addSongToRequestPlaylist = async (_song: Song, top = false) => {
     // 需要是异步方法，需要等待setRequestPlaylist生效
     const song = {
@@ -174,14 +87,17 @@ const SongRequest: React.FC = () => {
     // setActiveTab('request');
   };
 
+  // 从点歌列表中移除歌曲
   const removeSongFromRequestPlaylist = async (index: number) => {
     setRequestPlaylist(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 播放下一首
   const playNextSong = () => {
     const currentRequestPlaylist = getRequestPlaylist();
-    const currentDefaultPlaylist = getDefaultPlaylist();
-    const currentDefaultPlaylistIndex = getDefaultPlaylistIndex();
+    const currentDefaultPlaylist = getDefaultPlaylist(); // 使用getter获取最新的播放列表
+    const currentDefaultPlaylistIdx = getDefaultPlaylistIndex(); // 使用getter获取最新的播放索引
+
     if (currentRequestPlaylist.length <= 0 && currentDefaultPlaylist.length <= 0) {
       showToast('播放列表为空', 'info');
       console.log('播放列表为空');
@@ -196,7 +112,7 @@ const SongRequest: React.FC = () => {
     } else if (currentDefaultPlaylist.length > 0) {
       // 如果点歌列表没有歌，播放默认歌单
       // 先只支持列表循环播放
-      const nextIndex = (currentDefaultPlaylistIndex + 1) % currentDefaultPlaylist.length;
+      const nextIndex = (currentDefaultPlaylistIdx + 1) % currentDefaultPlaylist.length;
       song = currentDefaultPlaylist[nextIndex];
       setDefaultPlaylistIndex(nextIndex);
       setActiveTab('default');
@@ -218,7 +134,10 @@ const SongRequest: React.FC = () => {
       });
   };
 
-  const handleToggleDanmu = () => {
+  // 开关弹幕点歌
+  const { consoleConnected, setConsoleConnected } = useSettingStore();
+
+  const handleToggleDanmu = async () => {
     if (connectionState === 'connecting' || connectionState === 'reconnecting') {
       showToast('弹幕正在连接中', 'info');
       return;
@@ -234,6 +153,12 @@ const SongRequest: React.FC = () => {
       return;
     }
 
+    // 如果控制台弹幕未连接，则自动开启
+    if (!consoleConnected) {
+      setConsoleConnected(true);
+      showToast('已自动开启控制台弹幕连接', 'info');
+    }
+
     // 如果未连接，则创建新的客户端实例
     const client = new LaplaceEventBridgeClient({
       url: 'ws://localhost:9696',
@@ -242,6 +167,7 @@ const SongRequest: React.FC = () => {
       reconnectInterval: 3000,
       maxReconnectAttempts: 0,
     });
+    // TODO: 判断控制台的弹幕连接有无开启，如果未开启，则自动开启
 
     // 保存客户端实例引用
     clientRef.current = client;
@@ -289,6 +215,34 @@ const SongRequest: React.FC = () => {
     });
   };
 
+  // 搜索歌曲
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const results = await searchSongs(searchQuery, searchSource);
+
+      setSearchResults(results);
+
+      if (results.length === 0) {
+        showToast('未找到相关歌曲', 'info');
+      }
+    } catch (error) {
+      console.error('搜索歌曲出错:', error);
+      showToast('搜索歌曲出错', 'error');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 处理弹幕点歌
   const handleDanmuSongRequest = async (source: string, keyword: string, requester = '[匿名]') => {
     try {
       // 检查是否包含黑名单关键词
@@ -319,8 +273,18 @@ const SongRequest: React.FC = () => {
     }
   };
 
-  const handlePrefixChange = (source: string, value: string) => {
-    setPrefixConfig(prev => ({ ...prev, [source]: value }));
+  // 添加黑名单关键词
+  const handleAddToBlacklist = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBlacklistItem) {
+      return;
+    }
+    if (blacklist.includes(newBlacklistItem)) {
+      showToast('关键词已存在', 'error');
+      return;
+    }
+    addToBlacklist(newBlacklistItem);
+    setNewBlacklistItem('');
   };
 
   useEffect(() => {
@@ -363,8 +327,6 @@ const SongRequest: React.FC = () => {
             setIsGettingSongInfo(false);
           });
       }
-
-      console.log(playerRef.current);
     }
 
     // 清理函数
@@ -472,7 +434,7 @@ const SongRequest: React.FC = () => {
     </Flex>
   );
 
-  // 渲染默认播放列表项
+  // 渲染默认播放歌单项
   const renderDefaultPlaylistItem = (song: Song, index: number) => {
     const isCurrent = index === defaultPlaylistIndex;
     return (
@@ -613,21 +575,18 @@ const SongRequest: React.FC = () => {
               connecting: '开启中',
             }[connectionState]
           }
-          {connectionState === 'connected'
-            ? '已开启'
-            : connectionState === 'disconnected'
-              ? '未开启'
-              : '开启中'}
         </Badge>
         {/* 开关弹幕点歌 */}
-        <Button
-          size="2"
-          color={connectionState === 'connected' ? 'red' : 'indigo'}
-          onClick={handleToggleDanmu}
-          disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
-        >
-          {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
-        </Button>
+        <Tooltip content="如未开启控制台弹幕连接，将同时开启" side="top">
+          <Button
+            size="2"
+            color={connectionState === 'connected' ? 'red' : 'indigo'}
+            onClick={handleToggleDanmu}
+            disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
+          >
+            {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
+          </Button>
+        </Tooltip>
 
         {/* 点歌前缀配置 */}
         <Popover.Root>
@@ -648,7 +607,7 @@ const SongRequest: React.FC = () => {
                 <TextField.Root
                   size="2"
                   value={prefix}
-                  onChange={e => handlePrefixChange(source, e.target.value)}
+                  onChange={e => updatePrefixConfig(source as keyof PrefixConfig, e.target.value)}
                   className="w-16"
                 />
               </Flex>
@@ -657,7 +616,7 @@ const SongRequest: React.FC = () => {
         </Popover.Root>
 
         {/* 点歌黑名单配置 */}
-        <Popover.Root open={showBlacklistConfig} onOpenChange={setShowBlacklistConfig}>
+        <Popover.Root>
           <Popover.Trigger>
             <Button variant="soft" size="2">
               点歌黑名单
@@ -667,7 +626,7 @@ const SongRequest: React.FC = () => {
             <Text size="1" color="gray" as="p" mb="2">
               关键词(不区分大小写)
             </Text>
-            <form onSubmit={addToBlacklist} className="flex gap-2 mb-2">
+            <form onSubmit={handleAddToBlacklist} className="flex gap-2 mb-2">
               <TextField.Root
                 size="2"
                 placeholder="输入关键词"
@@ -744,7 +703,9 @@ const SongRequest: React.FC = () => {
           placeholder="搜索歌曲、歌手或专辑"
           value={searchQuery}
           size="2"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearchQuery(e.target.value.trim())
+          }
         />
         <Button type="submit" disabled={isSearching} size="2" variant="surface">
           <MagnifyingGlassIcon />

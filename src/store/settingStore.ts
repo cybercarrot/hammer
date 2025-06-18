@@ -10,8 +10,20 @@ interface DanmakuConfig {
   uuid: string;
 }
 
+// 前缀配置类型
+export type PrefixConfig = {
+  netease: string;
+  kuwo: string;
+  tidal: string;
+  joox: string;
+};
+
 // 设置状态接口
 interface SettingState {
+  // 控制台连接状态
+  consoleConnected: boolean;
+  // 设置控制台连接状态
+  setConsoleConnected: (connected: boolean) => void;
   // 主题设置
   theme: ThemeType;
   // 设置主题
@@ -27,9 +39,25 @@ interface SettingState {
   regenerateDanmakuIds: () => void;
   // 获取合并的token
   getMergedToken: () => string;
+
+  // 前缀配置
+  prefixConfig: PrefixConfig;
+  // 获取前缀配置（用于在闭包中获取最新值）
+  getPrefixConfig: () => PrefixConfig;
+  // 更新前缀配置
+  updatePrefixConfig: (source: keyof PrefixConfig, value: string) => void;
+
+  // 黑名单关键词
+  blacklist: string[];
+  // 添加黑名单关键词
+  addToBlacklist: (keyword: string) => void;
+  // 移除黑名单关键词
+  removeFromBlacklist: (keyword: string) => void;
+  // 检查是否包含黑名单关键词
+  hasBlacklistedKeyword: (text: string) => boolean;
 }
 
-const THEME_STORAGE_KEY = 'setting-store';
+const SETTING_STORAGE_KEY = 'setting-store';
 
 // 获取初始主题
 const getInitialTheme = (): ThemeType => {
@@ -55,11 +83,14 @@ const getInitialDanmakuConfig = (): DanmakuConfig => {
 export const useSettingStore = create<SettingState>()(
   persist(
     (set, get) => ({
-      theme: getInitialTheme(),
+      // 控制台连接状态
+      consoleConnected: false,
+      setConsoleConnected: (connected: boolean) => set({ consoleConnected: connected }),
 
+      // 主题
+      theme: getInitialTheme(),
       setTheme: theme => {
         set({ theme });
-
         // 应用主题到DOM
         const html = document.documentElement;
         if (theme === 'dark') {
@@ -68,17 +99,14 @@ export const useSettingStore = create<SettingState>()(
           html.classList.remove('dark-theme');
         }
       },
-
       toggleTheme: () => {
         const currentTheme = get().theme;
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         get().setTheme(newTheme);
       },
 
-      // 弹幕机配置
+      // 弹幕机
       danmakuConfig: getInitialDanmakuConfig(),
-
-      // 更新弹幕机配置
       updateDanmakuConfig: config => {
         set(state => ({
           danmakuConfig: {
@@ -87,8 +115,6 @@ export const useSettingStore = create<SettingState>()(
           },
         }));
       },
-
-      // 重新生成弹幕机ID
       regenerateDanmakuIds: () => {
         set({
           danmakuConfig: {
@@ -97,18 +123,62 @@ export const useSettingStore = create<SettingState>()(
           },
         });
       },
-
-      // 获取合并的token
       getMergedToken: () => {
         const { uuid, password } = get().danmakuConfig;
         return `${uuid}@${password}`;
       },
+
+      // 前缀配置
+      prefixConfig: {
+        netease: '点歌',
+        kuwo: '点k歌',
+        tidal: '点t歌',
+        joox: '点j歌',
+      },
+      // 获取前缀配置（用于在闭包中获取最新值）
+      getPrefixConfig: () => get().prefixConfig,
+      updatePrefixConfig: (source, value) => {
+        set(state => ({
+          prefixConfig: {
+            ...state.prefixConfig,
+            [source]: value,
+          },
+        }));
+      },
+
+      // 黑名单关键词
+      blacklist: [] as string[],
+      addToBlacklist: keyword => {
+        if (!keyword) return;
+        set(state => {
+          // 如果已存在，则不添加
+          if (state.blacklist.includes(keyword)) {
+            return state;
+          }
+          return {
+            blacklist: [...state.blacklist, keyword],
+          };
+        });
+      },
+      removeFromBlacklist: keyword => {
+        set(state => ({
+          blacklist: state.blacklist.filter(item => item !== keyword),
+        }));
+      },
+      hasBlacklistedKeyword: text => {
+        const { blacklist } = get();
+        if (!text || !blacklist.length) return false;
+        const lowerText = text.toLowerCase();
+        return blacklist.some(keyword => keyword && lowerText.includes(keyword.toLowerCase()));
+      },
     }),
     {
-      name: THEME_STORAGE_KEY,
+      name: SETTING_STORAGE_KEY, // 只保存必要的状态
       partialize: state => ({
         theme: state.theme,
         danmakuConfig: state.danmakuConfig,
+        blacklist: state.blacklist,
+        prefixConfig: state.prefixConfig,
       }),
       onRehydrateStorage: () => {
         // 当状态从存储中恢复后被调用

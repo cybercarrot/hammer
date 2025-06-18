@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '../store/userStore';
+import { useSettingStore } from '../store/settingStore';
 import {
   Button,
   Spinner,
@@ -18,7 +19,7 @@ const ControlPanel: React.FC = () => {
   const { roomId } = useUserStore();
   const webviewRef = useRef<WebviewTag>(null);
   const [webviewLoading, setWebviewLoading] = useState(true);
-  const [showWebview, setShowWebview] = useState(false);
+  const { consoleConnected, setConsoleConnected } = useSettingStore();
   const [localRoomId, setLocalRoomId] = useState<string>(roomId + '');
 
   // 注入并初始化 event_bridge_settings 的代码
@@ -54,9 +55,9 @@ const ControlPanel: React.FC = () => {
     injectEventBridgeSettings(webview);
   }, [injectEventBridgeSettings]);
 
-  // 当 showWebview 变为 true 时，设置 webview 事件监听
+  // 当 consoleConnected 变为 true 时，设置 webview 事件监听
   useEffect(() => {
-    if (!showWebview) return;
+    if (!consoleConnected) return;
 
     const webview = webviewRef.current;
     if (!webview) return;
@@ -65,7 +66,7 @@ const ControlPanel: React.FC = () => {
     return () => {
       webview.removeEventListener('did-finish-load', handleWebviewLoad);
     };
-  }, [showWebview, handleWebviewLoad]);
+  }, [consoleConnected, handleWebviewLoad]);
 
   if (!roomId) {
     return (
@@ -98,7 +99,11 @@ const ControlPanel: React.FC = () => {
           value={localRoomId}
           onChange={e => setLocalRoomId(e.target.value)}
         />
-        <Button variant="solid" onClick={() => setShowWebview(true)} disabled={!localRoomId}>
+        <Button
+          variant="solid"
+          onClick={() => setConsoleConnected(!consoleConnected)}
+          disabled={!localRoomId}
+        >
           打开控制台并连接弹幕
         </Button>
       </Flex>
@@ -130,7 +135,7 @@ const ControlPanel: React.FC = () => {
 
   return (
     <Flex direction="column" height="100%">
-      {!showWebview ? renderOperationSection() : renderConsolePanel()}
+      {consoleConnected ? renderConsolePanel() : renderOperationSection()}
     </Flex>
   );
 };
