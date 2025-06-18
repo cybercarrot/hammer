@@ -7,3 +7,4 @@ coverage
 .git
 package-lock.json
 *.md 
+chatOverlay
