@@ -144,9 +144,7 @@ export class WebSocketServer {
       parsed = JSON.parse(data.toString());
 
       if (this.debug) {
-        this.log(
-          `从 ${clientID} 收到 ${parsed.type || '未知类型'} 消息: ${JSON.stringify(parsed)}`
-        );
+        this.log(`从 ${clientID} 收到 ${parsed.type || '未知类型'} 消息: ${JSON.stringify(parsed)}`);
       } else if (parsed.type) {
         this.log(`从 ${clientID} 收到 ${parsed.type} 消息`);
       } else {

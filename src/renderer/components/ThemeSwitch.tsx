@@ -8,13 +8,7 @@ const ThemeSwitch: React.FC = () => {
   const isDark = theme === 'dark';
 
   return (
-    <IconButton
-      className="!m-0"
-      size="2"
-      variant="ghost"
-      onClick={toggleTheme}
-      aria-label="切换主题"
-    >
+    <IconButton className="!m-0" size="2" variant="ghost" onClick={toggleTheme} aria-label="切换主题">
       {isDark ? <MoonIcon width="18" height="18" /> : <SunIcon width="18" height="18" />}
     </IconButton>
   );

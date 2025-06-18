@@ -120,9 +120,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }}
             className={`toast-root rounded text-sm text-white p-3 flex items-center shadow-md w-auto max-w-[500px] ${getBackgroundColor(toast.type)}`}
           >
-            <Toast.Description className="m-0 leading-tight break-words">
-              {toast.message}
-            </Toast.Description>
+            <Toast.Description className="m-0 leading-tight break-words">{toast.message}</Toast.Description>
           </Toast.Root>
         ))}
         <Toast.Viewport

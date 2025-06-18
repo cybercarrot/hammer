@@ -1,17 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '../store/userStore';
 import { useSettingStore } from '../store/settingStore';
-import {
-  Button,
-  Spinner,
-  TextField,
-  Flex,
-  Text,
-  Separator,
-  Callout,
-  Badge,
-  Box,
-} from '@radix-ui/themes';
+import { Button, Spinner, TextField, Flex, Text, Separator, Callout, Badge, Box } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
 
 // MARK: 控制台
@@ -99,11 +89,7 @@ const ControlPanel: React.FC = () => {
           value={localRoomId}
           onChange={e => setLocalRoomId(e.target.value)}
         />
-        <Button
-          variant="solid"
-          onClick={() => setConsoleConnected(!consoleConnected)}
-          disabled={!localRoomId}
-        >
+        <Button variant="solid" onClick={() => setConsoleConnected(!consoleConnected)} disabled={!localRoomId}>
           打开控制台并连接弹幕
         </Button>
       </Flex>
@@ -112,11 +98,7 @@ const ControlPanel: React.FC = () => {
 
   // 渲染控制台面板模块
   const renderConsolePanel = () => (
-    <Box
-      position="relative"
-      flexGrow="1"
-      className="border rounded-sm [border-color:var(--gray-5)]"
-    >
+    <Box position="relative" flexGrow="1" className="border rounded-sm [border-color:var(--gray-5)]">
       <webview
         ref={webviewRef}
         src={`https://chat.laplace.live/dashboard/${localRoomId}`}

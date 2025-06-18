@@ -1,24 +1,28 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
-// import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
-import path from 'node:path';
-
-const iconPath = path.join(__dirname, 'assets/icon.ico');
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: iconPath,
-    extraResource: [iconPath],
+    icon: 'src/assets/icon.ico',
+    extraResource: ['src/assets/icon.ico'],
   },
   rebuildConfig: {},
-  // makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
-  makers: [new MakerZIP({}), new MakerRpm({}), new MakerDeb({})],
+  makers: [
+    new MakerSquirrel({
+      authors: '阿酒(zack)',
+      description: '一把锤子，专门敲打阿B直播',
+    }),
+    new MakerZIP({}, ['darwin']),
+    new MakerRpm({}),
+    new MakerDeb({}),
+  ],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
@@ -26,12 +30,12 @@ const config: ForgeConfig = {
       build: [
         {
           // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: 'src/main.ts',
+          entry: 'src/main/main.ts',
           config: 'vite.main.config.ts',
           target: 'main',
         },
         {
-          entry: 'src/preload.ts',
+          entry: 'src/main/preload.ts',
           config: 'vite.preload.config.ts',
           target: 'preload',
         },

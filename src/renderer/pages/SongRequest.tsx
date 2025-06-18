@@ -20,13 +20,7 @@ import {
   ScrollArea,
   BadgeProps,
 } from '@radix-ui/themes';
-import {
-  MagnifyingGlassIcon,
-  PlayIcon,
-  PlusIcon,
-  PinTopIcon,
-  TrashIcon,
-} from '@radix-ui/react-icons';
+import { MagnifyingGlassIcon, PlayIcon, PlusIcon, PinTopIcon, TrashIcon } from '@radix-ui/react-icons';
 import { LaplaceEventBridgeClient } from '@laplace.live/event-bridge-sdk';
 // @ts-expect-error APlayer types are not available
 import APlayer from 'aplayer';
@@ -61,16 +55,15 @@ const SongRequest: React.FC = () => {
 
   // 弹幕连接
   const clientRef = useRef<LaplaceEventBridgeClient | null>(null);
-  const [connectionState, setConnectionState] = useState<
-    'disconnected' | 'connecting' | 'connected' | 'reconnecting'
-  >('disconnected');
+  const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>(
+    'disconnected'
+  );
 
   // 前缀配置
   const { prefixConfig, updatePrefixConfig, getPrefixConfig } = useSettingStore();
 
   // 黑名单关键词配置
-  const { blacklist, addToBlacklist, removeFromBlacklist, hasBlacklistedKeyword } =
-    useSettingStore();
+  const { blacklist, addToBlacklist, removeFromBlacklist, hasBlacklistedKeyword } = useSettingStore();
   const [newBlacklistItem, setNewBlacklistItem] = useState('');
 
   // 歌曲搜索
@@ -222,16 +215,14 @@ const SongRequest: React.FC = () => {
     });
 
     // 设置连接状态变化处理器
-    client.onConnectionStateChange(
-      (state: 'disconnected' | 'connecting' | 'connected' | 'reconnecting') => {
-        console.log(`Connection state changed to: ${state}`);
-        setConnectionState(state);
+    client.onConnectionStateChange((state: 'disconnected' | 'connecting' | 'connected' | 'reconnecting') => {
+      console.log(`Connection state changed to: ${state}`);
+      setConnectionState(state);
 
-        if (state === 'connected') {
-          showToast('弹幕连接成功', 'success');
-        }
+      if (state === 'connected') {
+        showToast('弹幕连接成功', 'success');
       }
-    );
+    });
 
     // 连接服务器
     client.connect().catch(error => {
@@ -285,9 +276,7 @@ const SongRequest: React.FC = () => {
           requester, // 添加点歌者信息
         };
         addSongToRequestPlaylist(song);
-        const artistName = Array.isArray(song.artist)
-          ? song.artist.join('/')
-          : song.artist || '未知艺术家';
+        const artistName = Array.isArray(song.artist) ? song.artist.join('/') : song.artist || '未知艺术家';
         showToast(`已添加${requester}的点歌: ${song.name} - ${artistName}`, 'info');
       } else {
         showToast(`${requester}点歌未找到: ${keyword}`, 'error');
@@ -795,9 +784,7 @@ const SongRequest: React.FC = () => {
           placeholder="搜索歌曲、歌手或专辑"
           value={searchQuery}
           size="2"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setSearchQuery(e.target.value.trim())
-          }
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value.trim())}
         />
         <Button type="submit" disabled={isSearching} size="2" variant="surface">
           <MagnifyingGlassIcon />

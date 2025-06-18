@@ -3,6 +3,26 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 
+interface ElectronAPI {
+  utils: {
+    sendToMain: (channel: string, data: any) => void;
+    onFromMain: (channel: string, callback: (...args: any[]) => void) => void;
+  };
+  cookies: {
+    getCookiesByDomains: (domains: string[]) => Promise<{
+      success: boolean;
+      data?: Record<string, Electron.Cookie[]>;
+      error?: string;
+    }>;
+  };
+}
+
+declare global {
+  interface Window {
+    electron: ElectronAPI;
+  }
+}
+
 // 暴露安全的API给渲染进程
 contextBridge.exposeInMainWorld('electron', {
   // 提供一些通用工具函数

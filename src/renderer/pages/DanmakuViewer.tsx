@@ -13,7 +13,7 @@ import {
   Box,
 } from '@radix-ui/themes';
 import { ReloadIcon, ClipboardCopyIcon } from '@radix-ui/react-icons';
-import { ConfigProps, uploadCookies } from '../utils/cookies';
+import { ConfigProps, uploadCookies } from '../services/cookies';
 import { WebviewTag } from 'electron';
 import { useToast } from '../context/ToastContext';
 import { useSettingStore } from '../store/settingStore';
@@ -493,11 +493,7 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
         </Text>
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
-      <Box
-        position="relative"
-        flexGrow="1"
-        className="border rounded-sm [border-color:var(--gray-5)]"
-      >
+      <Box position="relative" flexGrow="1" className="border rounded-sm [border-color:var(--gray-5)]">
         <webview
           ref={webviewRef}
           src={url}

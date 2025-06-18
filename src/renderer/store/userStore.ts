@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { BiliLoginService } from '../services/BiliLogin';
+import { BilibiliService } from '../services/bilibiliApi';
 
 // 定义用户状态接口
 interface UserState {
@@ -80,7 +80,7 @@ export const useUserStore = create<UserState>()(
       checkExistingLogin: async () => {
         try {
           // 尝试获取用户信息，验证登录状态
-          const userInfo = await BiliLoginService.getUserInfo();
+          const userInfo = await BilibiliService.getUserInfo();
 
           // 如果登录有效，更新登录状态
           if (userInfo && userInfo.isLogin) {

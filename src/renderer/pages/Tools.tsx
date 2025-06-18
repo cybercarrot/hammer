@@ -81,14 +81,7 @@ const Tools: React.FC = () => {
                 </Text>
               </Form.Label>
               <Form.Control asChild>
-                <TextField.Root
-                  type="number"
-                  min={1}
-                  max={9999}
-                  defaultValue={1}
-                  required
-                  className="w-30"
-                />
+                <TextField.Root type="number" min={1} max={9999} defaultValue={1} required className="w-30" />
               </Form.Control>
               <div className="absolute left-0 top-full">
                 <Form.Message match="valueMissing" className="text-xs text-amber-600">

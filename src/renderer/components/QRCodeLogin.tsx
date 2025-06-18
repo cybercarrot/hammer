@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Button, Dialog, Flex, Text, Box } from '@radix-ui/themes';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import QRCode from 'qrcode';
-import { BiliLoginService } from '../services/BiliLogin';
+import { BilibiliService } from '../services/bilibiliApi';
 import { useUserStore } from '../store/userStore';
 import { useToast } from '../context/ToastContext';
 
@@ -55,7 +55,7 @@ const QRCodeLogin: React.FC = () => {
       clearPollingTimer();
 
       // 获取二维码数据
-      const qrData = await BiliLoginService.getQRCode();
+      const qrData = await BilibiliService.getQRCode();
 
       // 生成二维码图片
       const qrImage = await QRCode.toDataURL(qrData.url, {
@@ -96,7 +96,7 @@ const QRCodeLogin: React.FC = () => {
         }
 
         // 轮询扫码状态
-        const result = await BiliLoginService.pollQRCodeStatus(key);
+        const result = await BilibiliService.pollQRCodeStatus(key);
 
         // 处理不同状态
         switch (result.code) {
@@ -134,7 +134,7 @@ const QRCodeLogin: React.FC = () => {
   const handleLoginSuccess = async () => {
     try {
       // 获取用户信息
-      const userInfo = await BiliLoginService.getUserInfo();
+      const userInfo = await BilibiliService.getUserInfo();
 
       if (userInfo && userInfo.isLogin) {
         // 登录成功，更新状态

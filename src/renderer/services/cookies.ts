@@ -21,9 +21,7 @@ export interface ConfigProps {
 }
 
 // 获取指定域名的cookies
-export const getCookiesByDomains = async (
-  domains: string[]
-): Promise<Record<string, Electron.Cookie[]>> => {
+export const getCookiesByDomains = async (domains: string[]): Promise<Record<string, Electron.Cookie[]>> => {
   try {
     // 使用preload脚本提供的API从main进程获取cookies
     const result = await window.electron.cookies.getCookiesByDomains(domains);
@@ -41,16 +39,9 @@ export const getCookiesByDomains = async (
 };
 
 // 上传cookies到服务器
-export const uploadCookies = async (
-  config: ConfigProps
-): Promise<{ success: boolean; message: string }> => {
+export const uploadCookies = async (config: ConfigProps): Promise<{ success: boolean; message: string }> => {
   try {
-    const {
-      uuid,
-      password,
-      endpoint = DEFAULT_SYNC_SERVER,
-      domains = SUPPORTED_DOMAINS.map(d => d.domain),
-    } = config;
+    const { uuid, password, endpoint = DEFAULT_SYNC_SERVER, domains = SUPPORTED_DOMAINS.map(d => d.domain) } = config;
 
     // 参数验证
     if (!uuid || !password) {

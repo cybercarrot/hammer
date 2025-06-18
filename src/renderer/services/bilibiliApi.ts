@@ -146,17 +146,14 @@ export interface LiveRoomInfoResponse {
   };
 }
 
-export class BiliLoginService {
+export class BilibiliService {
   // 生成QR码的API
-  private static readonly QR_GENERATE_URL =
-    'https://passport.bilibili.com/x/passport-login/web/qrcode/generate';
+  private static readonly QR_GENERATE_URL = 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate';
   // 轮询QR码状态的API
-  private static readonly QR_POLL_URL =
-    'https://passport.bilibili.com/x/passport-login/web/qrcode/poll';
+  private static readonly QR_POLL_URL = 'https://passport.bilibili.com/x/passport-login/web/qrcode/poll';
   // 获取用户信息的API
   private static readonly USER_INFO_URL = 'https://api.bilibili.com/x/web-interface/nav';
-  private static readonly LIVE_ROOM_INFO_URL =
-    'https://api.live.bilibili.com/live_user/v1/Master/info';
+  private static readonly LIVE_ROOM_INFO_URL = 'https://api.live.bilibili.com/live_user/v1/Master/info';
 
   /**
    * 获取QR码数据
@@ -254,13 +251,7 @@ export class BiliLoginService {
           try {
             const liveRoomInfo = await this.getLiveRoomInfo(userInfo.mid);
             if (liveRoomInfo.code === 0 && liveRoomInfo.data) {
-              userStore.setLoginState(
-                true,
-                userInfo.uname,
-                userInfo.mid,
-                userInfo.face,
-                liveRoomInfo.data.room_id
-              );
+              userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face, liveRoomInfo.data.room_id);
             } else {
               userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
             }

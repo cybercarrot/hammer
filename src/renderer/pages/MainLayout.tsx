@@ -7,7 +7,7 @@ import Tools from './Tools';
 import ThemeSwitch from '../components/ThemeSwitch';
 import UserProfile from '../components/UserProfile';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
-import packageJson from '../../package.json';
+import packageJson from '../../../package.json';
 import { useUserStore } from '../store/userStore';
 
 // MARK: 主布局

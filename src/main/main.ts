@@ -1,18 +1,10 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  session,
-  Menu,
-  globalShortcut,
-  Tray,
-  nativeImage,
-} from 'electron';
+import { app, BrowserWindow, ipcMain, session, Menu, globalShortcut, Tray, nativeImage } from 'electron';
 import path from 'node:path';
+// @ts-expect-error electron-squirrel-startup is not a typescript module
 import started from 'electron-squirrel-startup';
-import { setupCookieHandlers } from './main/cookies';
+import { setupCookieHandlers } from './cookies';
 import windowStateKeeper from 'electron-window-state';
-import { wsServer } from './main/websocket';
+import { wsServer } from './websocket';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -23,12 +15,25 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 // 创建托盘变量
 let tray: Tray | null = null;
+
+// 获取资源路径的辅助函数
+function getAssetPath(...paths: string[]): string {
+  if (app.isPackaged) {
+    // 打包后的路径
+    return path.join(process.resourcesPath, ...paths);
+  } else {
+    // 开发环境路径
+    return 'src/assets/icon.ico';
+  }
+}
+
 // 图标路径
-const iconPath = app.isPackaged
-  ? process.resourcesPath + '/icon.ico'
-  : path.join(__dirname, '../../assets/icon.ico');
+const iconPath = getAssetPath('icon.ico');
 // 加载图标
 const icon = nativeImage.createFromPath(iconPath);
+if (icon.isEmpty()) {
+  console.error('Failed to load tray icon from path:', iconPath);
+}
 
 // 直接退出应用的函数
 const quitApp = () => {
