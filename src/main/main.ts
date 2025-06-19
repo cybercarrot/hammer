@@ -135,10 +135,11 @@ const createWindow = () => {
 
   // 允许跨域访问
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    // 将自身页面的来源 hack 为 bilibili.com
-    if (details.referrer.includes('http://localhost')) {
-      details.requestHeaders['Origin'] = 'https://www.bilibili.com';
-      details.requestHeaders['Referer'] = 'https://www.bilibili.com';
+    // 如果是localhost或127.0.0.1的请求，根据目标域名设置请求头
+    if (details.referrer.includes('http://localhost') || details.referrer.includes('http://127.0.0.1')) {
+      const url = new URL(details.url);
+      details.requestHeaders['Origin'] = `${url.protocol}//${url.hostname}`;
+      details.requestHeaders['Referer'] = `${url.protocol}//${url.hostname}`;
     }
 
     callback({ requestHeaders: details.requestHeaders });
