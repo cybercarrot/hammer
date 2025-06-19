@@ -48,6 +48,14 @@ interface SettingState {
   removeFromBlacklist: (keyword: string) => void;
   // 检查是否包含黑名单关键词
   hasBlacklistedKeyword: (text: string) => boolean;
+
+  // 同步歌单配置
+  syncPlaylistId: string;
+  syncUserId: string;
+  // 设置同步歌单ID
+  setSyncPlaylistId: (id: string) => void;
+  // 设置同步用户ID
+  setSyncUserId: (id: string) => void;
 }
 
 const SETTING_STORAGE_KEY = 'setting-store';
@@ -165,6 +173,14 @@ export const useSettingStore = create<SettingState>()(
         const lowerText = text.toLowerCase();
         return blacklist.some(keyword => keyword && lowerText.includes(keyword.toLowerCase()));
       },
+
+      // 同步歌单配置
+      syncPlaylistId: '',
+      syncUserId: '',
+      // 设置同步歌单ID
+      setSyncPlaylistId: id => set({ syncPlaylistId: id }),
+      // 设置同步用户ID
+      setSyncUserId: id => set({ syncUserId: id }),
     }),
     {
       name: SETTING_STORAGE_KEY, // 只保存必要的状态
@@ -173,6 +189,8 @@ export const useSettingStore = create<SettingState>()(
         danmakuConfig: state.danmakuConfig,
         blacklist: state.blacklist,
         prefixConfig: state.prefixConfig,
+        syncPlaylistId: state.syncPlaylistId,
+        syncUserId: state.syncUserId,
       }),
       onRehydrateStorage: () => {
         // 当状态从存储中恢复后被调用

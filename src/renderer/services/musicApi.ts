@@ -53,6 +53,109 @@ export interface SearchResult {
   lyric_id?: string;
 }
 
+// 用户歌单相关接口
+export interface PlaylistCreator {
+  userId: number;
+  nickname: string;
+  avatarUrl: string;
+  signature: string;
+  vipType: number;
+}
+
+export interface Playlist {
+  id: number;
+  name: string;
+  coverImgUrl: string;
+  trackCount: number;
+  playCount: number;
+  createTime: number;
+  updateTime: number;
+  description: string | null;
+  tags: string[];
+  creator: PlaylistCreator;
+  privacy: number;
+  ordered: boolean;
+  specialType: number;
+}
+
+export interface UserPlaylistResponse {
+  code: number;
+  more: boolean;
+  playlist: Playlist[];
+}
+
+// 歌单详情相关接口
+export interface TrackArtist {
+  id: number;
+  name: string;
+  tns: string[];
+  alias: string[];
+}
+
+export interface TrackAlbum {
+  id: number;
+  name: string;
+  picUrl: string;
+  tns: string[];
+  pic: number;
+  pic_str?: string;
+}
+
+export interface TrackQuality {
+  br: number;
+  fid: number;
+  size: number;
+  vd: number;
+}
+
+export interface Track {
+  id: number;
+  name: string;
+  mainTitle: string | null;
+  additionalTitle: string | null;
+  ar: TrackArtist[];
+  alia: string[];
+  al: TrackAlbum;
+  dt: number; // 时长（毫秒）
+  h: TrackQuality; // 高品质
+  m: TrackQuality; // 中品质
+  l: TrackQuality; // 低品质
+  sq: TrackQuality; // 无损品质
+  hr: TrackQuality | null; // Hi-Res
+  cd: string;
+  no: number;
+  fee: number;
+  pop: number;
+  copyright: number;
+  publishTime: number;
+  tns?: string[]; // 翻译名称
+}
+
+export interface PlaylistDetail {
+  id: number;
+  name: string;
+  coverImgUrl: string;
+  coverImgId: number;
+  coverImgId_str: string;
+  userId: number;
+  createTime: number;
+  updateTime: number;
+  trackCount: number;
+  playCount: number;
+  description: string | null;
+  tags: string[];
+  creator: PlaylistCreator;
+  privacy: number;
+  ordered: boolean;
+  specialType: number;
+  tracks: Track[];
+}
+
+export interface PlaylistDetailResponse {
+  code: number;
+  playlist: PlaylistDetail;
+}
+
 const API_BASE_URL = 'https://music-api.gdstudio.xyz/api.php';
 
 export const searchSongs = async (query: string, source: string, count = 20, page = 1) => {
@@ -139,4 +242,24 @@ export const getSongInfo = async (song: SearchResult) => {
   });
 
   return songInfo;
+};
+
+export const getUserPlaylists = async (uid: string | number): Promise<Playlist[]> => {
+  const { data } = await axios.post<UserPlaylistResponse>(API_BASE_URL, `types=userlist&uid=${uid}`, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    },
+  });
+
+  return data.playlist || [];
+};
+
+export const getPlaylistDetail = async (playlistId: string | number): Promise<PlaylistDetail> => {
+  const { data } = await axios.post<PlaylistDetailResponse>(API_BASE_URL, `types=playlist&id=${playlistId}`, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    },
+  });
+
+  return data.playlist;
 };

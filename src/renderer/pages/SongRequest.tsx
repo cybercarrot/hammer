@@ -19,13 +19,22 @@ import {
   Popover,
   ScrollArea,
   BadgeProps,
+  Dialog,
 } from '@radix-ui/themes';
-import { MagnifyingGlassIcon, PlayIcon, PlusIcon, PinTopIcon, TrashIcon } from '@radix-ui/react-icons';
+import { MagnifyingGlassIcon, PlayIcon, PlusIcon, PinTopIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
 import { LaplaceEventBridgeClient } from '@laplace.live/event-bridge-sdk';
 // @ts-expect-error APlayer types are not available
 import APlayer from 'aplayer';
 import 'aplayer/dist/APlayer.min.css';
-import { searchSongs, getSongInfo, SearchResult } from '../services/musicApi';
+import {
+  searchSongs,
+  getSongInfo,
+  SearchResult,
+  getUserPlaylists,
+  Playlist,
+  getPlaylistDetail,
+  Track,
+} from '../services/musicApi';
 
 // MARK: 点歌机
 const SongRequest: React.FC = () => {
@@ -39,6 +48,17 @@ const SongRequest: React.FC = () => {
   // 点歌列表
   const [requestPlaylist, setRequestPlaylist, getRequestPlaylist] = useGetState<Song[]>([]);
 
+  // 同步歌单相关状态
+  const { syncPlaylistId, syncUserId, setSyncPlaylistId, setSyncUserId } = useSettingStore();
+  const [syncPlaylists, setSyncPlaylists] = useState<Playlist[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingPlaylist, setIsSyncingPlaylist] = useState(false);
+  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
+
+  // 本地输入状态（用于实时输入，不立即持久化）
+  const [localPlaylistId, setLocalPlaylistId] = useState(syncPlaylistId);
+  const [localUserId, setLocalUserId] = useState(syncUserId);
+
   // 默认播放歌单和索引
   const {
     defaultPlaylist,
@@ -46,6 +66,7 @@ const SongRequest: React.FC = () => {
     defaultPlaylistIndex,
     getDefaultPlaylistIndex,
     setDefaultPlaylistIndex,
+    updateDefaultPlaylist,
   } = useSongStore();
 
   // 当前播放的歌曲
@@ -299,6 +320,69 @@ const SongRequest: React.FC = () => {
     }
     addToBlacklist(newBlacklistItem);
     setNewBlacklistItem('');
+  };
+
+  // 同步网易云歌单
+  const handleSyncPlaylists = async () => {
+    setIsSyncing(true);
+    try {
+      const playlists = await getUserPlaylists(localUserId);
+      // 持久化歌单
+      setSyncPlaylists(playlists);
+      // 持久化用户ID
+      setSyncUserId(localUserId);
+      if (playlists.length === 0) {
+        showToast('该用户没有公开任何歌单', 'info');
+      } else {
+        showToast(`成功获取到 ${playlists.length} 个歌单`, 'success');
+      }
+    } catch (error) {
+      console.error('获取用户歌单失败:', error);
+      showToast('获取用户歌单失败', 'error');
+      setSyncPlaylists([]);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // 将Track转换为Song
+  const convertTrackToSong = (track: Track): Song => {
+    return {
+      id: track.id.toString(),
+      name: track.name,
+      artist: track.ar.map(artist => artist.name),
+      album: track.al.name,
+      source: 'netease', // 网易云歌单的歌曲都是网易云源
+      pic_id: track.al.pic_str || track.al.pic.toString(),
+      lyric_id: track.id.toString(),
+    };
+  };
+
+  // 通过歌单ID同步歌单
+  const handleSyncPlaylistById = async (id: string | number) => {
+    setIsSyncingPlaylist(true);
+    try {
+      const playlistDetail = await getPlaylistDetail(id);
+      const songs = playlistDetail.tracks.map(convertTrackToSong);
+
+      if (songs.length === 0) {
+        showToast('该歌单没有歌曲', 'info');
+        return;
+      }
+
+      // 更新固定歌单
+      updateDefaultPlaylist(songs);
+      // 持久化歌单ID
+      setSyncPlaylistId(localPlaylistId);
+      // 关闭模态框
+      setIsSyncDialogOpen(false);
+      showToast(`成功同步歌单"${playlistDetail.name}"，共${songs.length}首歌曲`, 'success');
+    } catch (error) {
+      console.error('同步歌单失败:', error);
+      showToast('同步歌单失败', 'error');
+    } finally {
+      setIsSyncingPlaylist(false);
+    }
   };
 
   useEffect(() => {
@@ -755,6 +839,109 @@ const SongRequest: React.FC = () => {
             </ScrollArea>
           </Popover.Content>
         </Popover.Root>
+
+        {/* 同步网易云歌单 */}
+        <Dialog.Root open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
+          <Dialog.Trigger>
+            <Button variant="soft" size="2">
+              管理固定歌单
+            </Button>
+          </Dialog.Trigger>
+          <Dialog.Content maxWidth="500px">
+            <Dialog.Title>管理固定歌单</Dialog.Title>
+            <Dialog.Description size="1" mb="4" color="gray">
+              直接输入网易云歌单 ID 同步，或通过网易云用户 ID 获取所有公开歌单，再挑选同步
+            </Dialog.Description>
+
+            <Flex direction="column" gap="4">
+              <Flex gap="2" align="center">
+                <Text className="w-14">歌单ID:</Text>
+                <TextField.Root
+                  className="flex-1"
+                  placeholder="请输入网易云歌单ID"
+                  value={localPlaylistId}
+                  onChange={e => setLocalPlaylistId(e.target.value.trim())}
+                />
+                <Button
+                  onClick={() => handleSyncPlaylistById(localPlaylistId)}
+                  disabled={isSyncingPlaylist || !localPlaylistId}
+                >
+                  {isSyncingPlaylist ? <Spinner /> : '替换歌单'}
+                </Button>
+                <Button color="red" variant="soft" onClick={() => updateDefaultPlaylist([])}>
+                  清空歌单
+                </Button>
+              </Flex>
+
+              <Flex gap="2" align="center">
+                <Text className="w-14">用户ID:</Text>
+                <TextField.Root
+                  className="flex-1"
+                  placeholder="请输入网易云用户ID"
+                  value={localUserId}
+                  onChange={e => setLocalUserId(e.target.value.trim())}
+                />
+                <Button onClick={handleSyncPlaylists} disabled={isSyncing || !localUserId}>
+                  {isSyncing ? <Spinner /> : '获取歌单'}
+                </Button>
+              </Flex>
+            </Flex>
+
+            {/* 歌单列表 */}
+            {syncPlaylists.length > 0 && (
+              <Box mt="4">
+                <Text as="div" mb="2" weight="bold">
+                  歌单列表
+                </Text>
+                <ScrollArea type="auto" scrollbars="vertical" className="max-h-100">
+                  <Flex direction="column">
+                    {syncPlaylists.map(playlist => (
+                      <Flex
+                        key={playlist.id}
+                        position="relative"
+                        align="center"
+                        p="2"
+                        className="group border-b [border-color:var(--gray-5)]"
+                        gap="2"
+                      >
+                        <img src={playlist.coverImgUrl} alt={playlist.name} className="w-8 h-8 rounded object-cover" />
+                        <Flex direction="column" className="flex-auto">
+                          <Text size="2" truncate>
+                            {playlist.name}
+                          </Text>
+                          <Text size="1" color="gray">
+                            {playlist.trackCount} 首歌曲
+                          </Text>
+                        </Flex>
+                        <Box
+                          position="absolute"
+                          right="3"
+                          className="hidden! group-hover:flex! group-hover:[background-color:var(--gray-5)] rounded"
+                        >
+                          <Tooltip content="同步此歌单" side="top">
+                            <IconButton
+                              className="!m-0"
+                              variant="ghost"
+                              size="3"
+                              color="ruby"
+                              onClick={() => {
+                                setLocalPlaylistId(playlist.id + '');
+                                handleSyncPlaylistById(playlist.id);
+                              }}
+                              disabled={isSyncingPlaylist}
+                            >
+                              {isSyncingPlaylist ? <Spinner size="2" /> : <UpdateIcon width={14} height={14} />}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </ScrollArea>
+              </Box>
+            )}
+          </Dialog.Content>
+        </Dialog.Root>
       </Flex>
     </Box>
   );
