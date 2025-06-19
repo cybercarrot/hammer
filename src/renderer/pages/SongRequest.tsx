@@ -308,7 +308,7 @@ const SongRequest: React.FC = () => {
         container: playerContainerRef.current,
         audio: [],
         autoplay: false,
-        // loop: 'none',
+        loop: 'none',
         // order: 'random',
         preload: 'auto',
         volume: 0.7,
