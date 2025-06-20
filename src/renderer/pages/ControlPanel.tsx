@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '../store/userStore';
 import { useSettingStore } from '../store/settingStore';
-import { Button, Spinner, TextField, Flex, Text, Separator, Callout, Badge, Box } from '@radix-ui/themes';
+import { Button, Spinner, TextField, Flex, Text, Separator, Callout, Badge, Box, Tooltip } from '@radix-ui/themes';
 import { WebviewTag } from 'electron';
 
 // MARK: 控制台
@@ -17,19 +17,29 @@ const ControlPanel: React.FC = () => {
     const initScript = `
 (function() {
   try {
-    const settings = localStorage.getItem('event_bridge_settings');
-    if (!settings || settings === 'null') {
-      const defaultSettings = { address: 'localhost', port: 9696 };
-      localStorage.setItem('event_bridge_settings', JSON.stringify(defaultSettings));
-      console.log('已初始化 event_bridge_settings:', defaultSettings);
+    // 初始化 event_bridge_settings
+    const eventBridgeSettings = localStorage.getItem('event_bridge_settings');
+    if (!eventBridgeSettings || eventBridgeSettings === 'null') {
+      const defaultEventBridgeSettings = { address: 'localhost', port: 9696 };
+      localStorage.setItem('event_bridge_settings', JSON.stringify(defaultEventBridgeSettings));
+      console.log('已初始化 event_bridge_settings:', defaultEventBridgeSettings);
     } else {
-      console.log('event_bridge_settings 已存在:', JSON.parse(settings));
+      console.log('event_bridge_settings 已存在:', JSON.parse(eventBridgeSettings));
+    }
+
+    // 初始化 obs_connection_settings
+    const obsConnectionSettings = localStorage.getItem('obs_connection_settings');
+    if (!obsConnectionSettings || obsConnectionSettings === 'null') {
+      const defaultObsConnectionSettings = { address: 'localhost', port: 4455 };
+      localStorage.setItem('obs_connection_settings', JSON.stringify(defaultObsConnectionSettings));
+      console.log('已初始化 obs_connection_settings:', defaultObsConnectionSettings);
+    } else {
+      console.log('obs_connection_settings 已存在:', JSON.parse(obsConnectionSettings));
     }
   } catch (error) {
-    console.error('初始化 event_bridge_settings 失败:', error);
+    console.error('初始化设置失败:', error);
   }
-})();
-    `.trim();
+})();`;
 
     // 立即执行初始化脚本
     webview.executeJavaScript(initScript).catch(console.error);
@@ -89,9 +99,11 @@ const ControlPanel: React.FC = () => {
           value={localRoomId}
           onChange={e => setLocalRoomId(e.target.value)}
         />
-        <Button variant="solid" onClick={() => setConsoleConnected(!consoleConnected)} disabled={!localRoomId}>
-          打开控制台并连接弹幕
-        </Button>
+        <Tooltip content="最好先开启 OBS 的 WebSocket 服务器，以便在控制台中便捷控制直播与场景" side="top">
+          <Button variant="solid" onClick={() => setConsoleConnected(!consoleConnected)} disabled={!localRoomId}>
+            打开控制台并连接弹幕与 OBS
+          </Button>
+        </Tooltip>
       </Flex>
     </Box>
   );
