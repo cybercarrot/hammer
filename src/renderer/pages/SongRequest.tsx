@@ -10,6 +10,7 @@ import {
   Box,
   Select,
   TextField,
+  TextArea,
   Separator,
   Spinner,
   Tabs,
@@ -21,8 +22,17 @@ import {
   BadgeProps,
   Dialog,
 } from '@radix-ui/themes';
-import { MagnifyingGlassIcon, PlayIcon, PlusIcon, PinTopIcon, TrashIcon, UpdateIcon } from '@radix-ui/react-icons';
+import {
+  MagnifyingGlassIcon,
+  PlayIcon,
+  PlusIcon,
+  PinTopIcon,
+  TrashIcon,
+  UpdateIcon,
+  InfoCircledIcon,
+} from '@radix-ui/react-icons';
 import { LaplaceEventBridgeClient } from '@laplace.live/event-bridge-sdk';
+import { obsWebSocketService } from '../services/obsWebSocket';
 // @ts-expect-error APlayer types are not available
 import APlayer from 'aplayer';
 import 'aplayer/dist/APlayer.min.css';
@@ -70,7 +80,7 @@ const SongRequest: React.FC = () => {
   } = useSongStore();
 
   // 当前播放的歌曲
-  const [, setCurrentSong, getCurrentSong] = useGetState<Song | null>(null);
+  const [currentSong, setCurrentSong, getCurrentSong] = useGetState<Song | null>(null);
   // 播放历史
   const [playHistory, setPlayHistory] = useState<Song[]>([]);
 
@@ -86,6 +96,11 @@ const SongRequest: React.FC = () => {
   // 黑名单关键词配置
   const { blacklist, addToBlacklist, removeFromBlacklist, hasBlacklistedKeyword } = useSettingStore();
   const [newBlacklistItem, setNewBlacklistItem] = useState('');
+
+  // OBS配置相关状态
+  const { obsConfig, updateOBSConfig, resetOBSTextTemplate, resetOBSConnection } = useSettingStore();
+  const [obsConfiguring, setObsConfiguring] = useState(false);
+  const [obsSyncEnabled, setObsSyncEnabled] = useState(false);
 
   // 歌曲搜索
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,7 +131,7 @@ const SongRequest: React.FC = () => {
     });
   };
 
-  // 播放下一首
+  // MARK: 播放下一首
   const playNextSong = async (justLoad = false) => {
     // 需要异步一下，防止 requestPlaylist 还未更新
     await Promise.resolve();
@@ -174,7 +189,7 @@ const SongRequest: React.FC = () => {
       });
   };
 
-  // 开关弹幕点歌
+  // MARK: 开关弹幕点歌
   const { consoleConnected, setConsoleConnected } = useSettingStore();
   const handleToggleDanmu = async () => {
     if (connectionState === 'connecting' || connectionState === 'reconnecting') {
@@ -206,7 +221,6 @@ const SongRequest: React.FC = () => {
       reconnectInterval: 3000,
       maxReconnectAttempts: 0,
     });
-    // TODO: 判断控制台的弹幕连接有无开启，如果未开启，则自动开启
 
     // 保存客户端实例引用
     clientRef.current = client;
@@ -252,7 +266,7 @@ const SongRequest: React.FC = () => {
     });
   };
 
-  // 搜索歌曲
+  // MARK: 搜索歌曲
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery) {
@@ -279,7 +293,7 @@ const SongRequest: React.FC = () => {
     }
   };
 
-  // 处理弹幕点歌
+  // MARK: 处理弹幕点歌
   const handleDanmuSongRequest = async (source: string, keyword: string, requester = '[匿名]') => {
     try {
       // 检查是否包含黑名单关键词
@@ -289,7 +303,6 @@ const SongRequest: React.FC = () => {
         return;
       }
 
-      // Type assertion for source since we know it's a valid source from our config
       const results = await searchSongs(keyword, source as 'netease' | 'kuwo' | 'tidal' | 'joox');
       if (results.length > 0) {
         const song = {
@@ -308,7 +321,7 @@ const SongRequest: React.FC = () => {
     }
   };
 
-  // 添加黑名单关键词
+  // MARK: 添加黑名单关键词
   const handleAddToBlacklist = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBlacklistItem) {
@@ -322,7 +335,55 @@ const SongRequest: React.FC = () => {
     setNewBlacklistItem('');
   };
 
-  // 同步网易云歌单
+  // MARK: 开启OBS播放状态同步
+  const handleEnableOBSSync = async () => {
+    try {
+      setObsConfiguring(true);
+
+      if (!(await obsWebSocketService.connect())) {
+        showToast('OBS 连接失败', 'error');
+        return;
+      }
+
+      if (!(await obsWebSocketService.configureSongRequestSource())) {
+        showToast('OBS 点歌机源设置失败', 'error');
+        return;
+      }
+
+      // 开启同步
+      setObsSyncEnabled(true);
+      showToast('播放状态同步已开启', 'success');
+    } catch (error) {
+      console.error('开启OBS同步失败:', error);
+      showToast('开启播放状态同步失败，请检查 OBS 的服务配置', 'error');
+    } finally {
+      setObsConfiguring(false);
+    }
+  };
+
+  // MARK: 关闭OBS播放状态同步
+  const handleDisableOBSSync = async () => {
+    // 先隐藏点歌机文字源
+    await obsWebSocketService.hideSongRequestSource();
+    // 然后断开连接
+    await obsWebSocketService.disconnect();
+    setObsSyncEnabled(false);
+    showToast('播放状态同步已关闭', 'info');
+  };
+
+  // 同步设置到obs服务中
+  useEffect(() => {
+    obsWebSocketService.setConfig(obsConfig);
+  }, [obsConfig]);
+
+  // 同步播放状态到obs服务中
+  useEffect(() => {
+    if (obsSyncEnabled) {
+      obsWebSocketService.updateSongRequestText(currentSong, requestPlaylist);
+    }
+  }, [obsSyncEnabled, currentSong, requestPlaylist]);
+
+  // MARK: 同步网易云歌单
   const handleSyncPlaylists = async () => {
     setIsSyncing(true);
     try {
@@ -358,7 +419,7 @@ const SongRequest: React.FC = () => {
     };
   };
 
-  // 通过歌单ID同步歌单
+  // MARK: 通过歌单ID同步歌单
   const handleSyncPlaylistById = async (id: string | number) => {
     setIsSyncingPlaylist(true);
     try {
@@ -426,7 +487,7 @@ const SongRequest: React.FC = () => {
     };
   }, []);
 
-  // 渲染播放器区域
+  // MARK: 渲染播放器区域
   const renderPlayer = () => (
     <Box mb="2">
       <Flex align="center" mb="2">
@@ -453,7 +514,7 @@ const SongRequest: React.FC = () => {
     </Box>
   );
 
-  // 渲染点歌播放列表项
+  // MARK: 渲染点歌播放列表项
   const renderRequestPlaylistItem = (song: Song, index: number) => (
     <Flex
       position="relative"
@@ -521,7 +582,7 @@ const SongRequest: React.FC = () => {
     </Flex>
   );
 
-  // 渲染默认播放歌单项
+  // MARK: 渲染默认播放歌单项
   const renderDefaultPlaylistItem = (song: Song, index: number) => {
     const isCurrent = index === defaultPlaylistIndex;
     return (
@@ -591,7 +652,7 @@ const SongRequest: React.FC = () => {
     );
   };
 
-  // 渲染播放历史项
+  // MARK: 渲染播放历史项
   const renderPlayHistoryItem = (song: Song, index: number) => (
     <Flex
       position="relative"
@@ -656,7 +717,7 @@ const SongRequest: React.FC = () => {
     </Flex>
   );
 
-  // 渲染播放列表标签页
+  // MARK: 渲染播放列表标签页
   const renderPlaylistTabs = () => (
     <Tabs.Root
       className="flex-auto flex flex-col"
@@ -708,12 +769,12 @@ const SongRequest: React.FC = () => {
     </Tabs.Root>
   );
 
-  // 渲染控制按钮区域
-  const renderControls = () => (
+  // MARK: 渲染弹幕点歌控制区域
+  const renderDanmuControls = () => (
     <Box className="mb-4">
       <Flex align="center" mb="2">
         <Text size="1" color="gray">
-          操作
+          点歌播放配置
         </Text>
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
@@ -731,7 +792,7 @@ const SongRequest: React.FC = () => {
           variant="soft"
           size="3"
         >
-          状态：
+          弹幕点歌：
           {
             {
               connected: '已开启',
@@ -749,11 +810,11 @@ const SongRequest: React.FC = () => {
             onClick={handleToggleDanmu}
             disabled={connectionState === 'connecting' || connectionState === 'reconnecting'}
           >
-            {connectionState === 'connected' ? '关闭弹幕点歌' : '开启弹幕点歌'}
+            {connectionState === 'connected' ? '关闭' : '开启'}
           </Button>
         </Tooltip>
 
-        {/* 点歌前缀配置 */}
+        {/* MARK: 点歌前缀配置 */}
         <Popover.Root>
           <Popover.Trigger>
             <Button variant="soft" size="2">
@@ -780,11 +841,11 @@ const SongRequest: React.FC = () => {
           </Popover.Content>
         </Popover.Root>
 
-        {/* 点歌黑名单配置 */}
+        {/* MARK: 点歌黑名单配置 */}
         <Popover.Root>
           <Popover.Trigger>
             <Button variant="soft" size="2">
-              点歌黑名单
+              黑名单
             </Button>
           </Popover.Trigger>
           <Popover.Content className="w-48" size="1">
@@ -840,7 +901,7 @@ const SongRequest: React.FC = () => {
           </Popover.Content>
         </Popover.Root>
 
-        {/* 同步网易云歌单 */}
+        {/* MARK: 管理固定歌单 */}
         <Dialog.Root open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
           <Dialog.Trigger>
             <Button variant="soft" size="2">
@@ -887,7 +948,7 @@ const SongRequest: React.FC = () => {
               </Flex>
             </Flex>
 
-            {/* 歌单列表 */}
+            {/* MARK: 歌单列表 */}
             {syncPlaylists.length > 0 && (
               <Box mt="4">
                 <Text as="div" mb="2" weight="bold">
@@ -946,7 +1007,182 @@ const SongRequest: React.FC = () => {
     </Box>
   );
 
-  // 渲染搜索区域
+  // MARK: 渲染播放状态同步控制区域
+  const renderSyncControls = () => (
+    <Box className="mb-4">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          同步 OBS 配置
+        </Text>
+        <Tooltip
+          content="需要先在 OBS 软件的 [顶部菜单栏] -> [工具] -> [WebSocket 服务器设置] 中勾选 [开启 WebSocket 服务器]，同时保持端口和密码与连接配置中一致(嫌麻烦可以去掉 [开启身份认证] 的勾选)"
+          side="top"
+        >
+          <InfoCircledIcon width={14} height={14} className="ml-1 cursor-help" />
+        </Tooltip>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <Flex gap="2" align="center">
+        {/* 播放状态同步状态 */}
+        <Badge color={obsConfiguring ? 'gray' : obsSyncEnabled ? 'green' : 'red'} variant="soft" size="3">
+          播放状态同步：
+          {obsConfiguring ? '配置中' : obsSyncEnabled ? '已开启' : '未开启'}
+        </Badge>
+
+        {/* 开启/关闭播放状态同步 */}
+        <Tooltip content="开启时会自动在当前OBS场景中设置点歌机源，关闭时将自动隐藏该源" side="top">
+          <Button
+            size="2"
+            color={obsSyncEnabled ? 'red' : 'indigo'}
+            onClick={obsSyncEnabled ? handleDisableOBSSync : handleEnableOBSSync}
+            disabled={obsConfiguring}
+          >
+            {obsSyncEnabled ? '关闭' : '开启'}
+          </Button>
+        </Tooltip>
+
+        {/* MARK: 文字模板配置 */}
+        <Dialog.Root>
+          <Dialog.Trigger>
+            <Button variant="soft" size="2">
+              文字模板配置
+            </Button>
+          </Dialog.Trigger>
+          <Dialog.Content maxWidth="500px">
+            <Dialog.Title>文字模板配置</Dialog.Title>
+            <Dialog.Description size="1" mb="4" color="gray">
+              通过模板自由拼装播放状态文本
+            </Dialog.Description>
+
+            {/* 文字源模板配置 */}
+            <Text size="2" as="p" mb="2">
+              文字源模板
+            </Text>
+            <Flex direction="row" gap="2" align="center" mb="2">
+              <Text size="1" color="gray">
+                关键字:
+              </Text>
+              <Badge variant="surface">{'{歌曲名}'}</Badge>
+              <Badge variant="surface">{'{歌手}'}</Badge>
+              <Badge variant="surface">{'{点歌者}'}</Badge>
+              <Badge variant="surface">{'{点歌列表}'}</Badge>
+            </Flex>
+            <TextArea
+              mb="4"
+              value={obsConfig.textTemplate}
+              onChange={e => updateOBSConfig({ textTemplate: e.target.value })}
+              rows={3}
+            />
+
+            <Text as="p" mb="2">
+              点歌列表项模板
+            </Text>
+            <Flex direction="row" gap="2" align="center" mb="2">
+              <Text size="1" color="gray">
+                关键字:
+              </Text>
+              <Badge variant="surface">{'{序号}'}</Badge>
+              <Badge variant="surface">{'{歌曲名}'}</Badge>
+              <Badge variant="surface">{'{歌手}'}</Badge>
+              <Badge variant="surface">{'{点歌者}'}</Badge>
+            </Flex>
+            <TextArea
+              mb="4"
+              value={obsConfig.playlistTemplate}
+              onChange={e => updateOBSConfig({ playlistTemplate: e.target.value })}
+              rows={2}
+            />
+
+            {/* 重置按钮 */}
+            <Flex justify="end">
+              <Button
+                variant="soft"
+                color="gray"
+                size="1"
+                onClick={() => {
+                  resetOBSTextTemplate();
+                  showToast('文字模板已重置为默认值', 'success');
+                }}
+              >
+                重置设置
+              </Button>
+            </Flex>
+          </Dialog.Content>
+        </Dialog.Root>
+
+        {/* MARK: OBS连接配置 */}
+        <Popover.Root>
+          <Popover.Trigger>
+            <Button variant="soft" size="2">
+              连接配置
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content style={{ width: 200 }}>
+            <Flex direction="column" gap="2">
+              <Text size="1" color="gray" as="p">
+                OBS WebSocket 服务器
+              </Text>
+
+              <Flex gap="2" align="center">
+                <Text size="1" className="w-8">
+                  地址:
+                </Text>
+                <TextField.Root
+                  placeholder="localhost"
+                  value={obsConfig.address}
+                  onChange={e => updateOBSConfig({ address: e.target.value.trim() })}
+                  className="flex-1"
+                />
+              </Flex>
+
+              <Flex gap="2" align="center">
+                <Text size="1" className="w-8">
+                  端口:
+                </Text>
+                <TextField.Root
+                  type="number"
+                  placeholder="4455"
+                  value={obsConfig.port}
+                  onChange={e => updateOBSConfig({ port: parseInt(e.target.value) })}
+                  className="flex-1"
+                />
+              </Flex>
+
+              <Flex gap="2" align="center">
+                <Text size="1" className="w-8">
+                  密码:
+                </Text>
+                <TextField.Root
+                  type="password"
+                  placeholder="留空表示无密码"
+                  value={obsConfig.password}
+                  onChange={e => updateOBSConfig({ password: e.target.value.trim() })}
+                  className="flex-1"
+                />
+              </Flex>
+
+              {/* 重置按钮 */}
+              <Flex justify="end">
+                <Button
+                  variant="soft"
+                  color="gray"
+                  size="1"
+                  onClick={() => {
+                    resetOBSConnection();
+                    showToast('连接配置已重置为默认值', 'success');
+                  }}
+                >
+                  重置设置
+                </Button>
+              </Flex>
+            </Flex>
+          </Popover.Content>
+        </Popover.Root>
+      </Flex>
+    </Box>
+  );
+
+  // MARK: 渲染搜索区域
   const renderSearchSection = () => (
     <Flex direction="column" className="flex-auto h-0">
       <Flex align="center" className="mb-2">
@@ -982,7 +1218,7 @@ const SongRequest: React.FC = () => {
     </Flex>
   );
 
-  // 渲染搜索结果
+  // MARK: 渲染搜索结果
   const renderSearchResults = () => (
     <ScrollArea type="auto" scrollbars="vertical">
       {searchResults.map(song => (
@@ -1060,7 +1296,7 @@ const SongRequest: React.FC = () => {
   );
 
   return (
-    <Flex height="100%" maxHeight="100%" gap="2">
+    <Flex height="100%" maxHeight="100%" gap="4">
       {/* 左侧：播放区域 */}
       <Flex direction="column" className="flex-2">
         {renderPlayer()}
@@ -1069,7 +1305,8 @@ const SongRequest: React.FC = () => {
 
       {/* 右侧：操作区域 */}
       <Flex direction="column" className="flex-3">
-        {renderControls()}
+        {renderDanmuControls()}
+        {renderSyncControls()}
         {renderSearchSection()}
       </Flex>
     </Flex>

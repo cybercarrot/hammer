@@ -11,6 +11,15 @@ interface DanmakuConfig {
   uuid: string;
 }
 
+// OBS WebSocket 配置接口
+interface OBSConfig {
+  address: string;
+  port: number;
+  password: string;
+  textTemplate: string;
+  playlistTemplate: string;
+}
+
 // 设置状态接口
 interface SettingState {
   // 控制台连接状态
@@ -32,6 +41,15 @@ interface SettingState {
   regenerateDanmakuIds: () => void;
   // 获取合并的token
   getMergedToken: () => string;
+
+  // OBS WebSocket 配置
+  obsConfig: OBSConfig;
+  // 更新OBS配置
+  updateOBSConfig: (config: Partial<OBSConfig>) => void;
+  // 重置OBS文字模板配置
+  resetOBSTextTemplate: () => void;
+  // 重置OBS连接配置
+  resetOBSConnection: () => void;
 
   // 前缀配置
   prefixConfig: Record<MusicSourceValue, string>;
@@ -77,6 +95,18 @@ const getInitialDanmakuConfig = (): DanmakuConfig => {
   return {
     password: shortUuid.generate(),
     uuid: shortUuid.generate(),
+  };
+};
+
+// 获取初始OBS配置
+export const getInitialOBSConfig = (): OBSConfig => {
+  return {
+    address: 'localhost',
+    port: 4455,
+    password: '',
+    textTemplate: `正在播放: {歌曲名} - {歌手} - {点歌者}
+{点歌列表}`,
+    playlistTemplate: '#{序号} - {歌曲名} - {歌手} - {点歌者}',
   };
 };
 
@@ -127,6 +157,36 @@ export const useSettingStore = create<SettingState>()(
       getMergedToken: () => {
         const { uuid, password } = get().danmakuConfig;
         return `${uuid}@${password}`;
+      },
+
+      // OBS WebSocket 配置
+      obsConfig: getInitialOBSConfig(),
+      updateOBSConfig: config => {
+        set(state => ({
+          obsConfig: {
+            ...state.obsConfig,
+            ...config,
+          },
+        }));
+      },
+      resetOBSTextTemplate: () => {
+        set(state => ({
+          obsConfig: {
+            ...state.obsConfig,
+            textTemplate: getInitialOBSConfig().textTemplate,
+            playlistTemplate: getInitialOBSConfig().playlistTemplate,
+          },
+        }));
+      },
+      resetOBSConnection: () => {
+        set(state => ({
+          obsConfig: {
+            ...state.obsConfig,
+            address: getInitialOBSConfig().address,
+            port: getInitialOBSConfig().port,
+            password: getInitialOBSConfig().password,
+          },
+        }));
       },
 
       // 前缀配置
@@ -187,6 +247,7 @@ export const useSettingStore = create<SettingState>()(
       partialize: state => ({
         theme: state.theme,
         danmakuConfig: state.danmakuConfig,
+        obsConfig: state.obsConfig,
         blacklist: state.blacklist,
         prefixConfig: state.prefixConfig,
         syncPlaylistId: state.syncPlaylistId,
