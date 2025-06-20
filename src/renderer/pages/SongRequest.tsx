@@ -225,10 +225,17 @@ const SongRequest: React.FC = () => {
     // 保存客户端实例引用
     clientRef.current = client;
 
-    // 设置消息处理器
+    // MARK: 弹幕消息处理器
     client.on('message', event => {
       const content = event.message;
       if (!content) return;
+
+      // 检查是否是切歌指令
+      if (content.trim() === '切歌') {
+        console.log(`收到${event.username}的切歌请求`);
+        handleSkipSongRequest(event.username, event.userType);
+        return;
+      }
 
       let source: string;
       let keyword: string;
@@ -321,6 +328,43 @@ const SongRequest: React.FC = () => {
     }
   };
 
+  // MARK: 处理切歌请求
+  const handleSkipSongRequest = (username: string, userType: number) => {
+    const currentRequestPlaylist = getRequestPlaylist();
+    const currentSong = getCurrentSong();
+
+    // 检查用户权限：主播(userType=100)或房管(userType=1)可以切任何歌
+    const isAuthorized = userType === 100 || userType === 1;
+
+    // 主播或房管可以直接切歌
+    if (currentSong && isAuthorized) {
+      showToast(`${username}(主播/房管)切掉当前歌曲: ${currentSong.name}`, 'info');
+      playNextSong();
+      return;
+    }
+
+    // 防止正好有用户名字叫[系统]，可以切掉系统歌曲
+    if (currentSong.requester === '[系统]') {
+      return;
+    }
+
+    // 普通用户只能切自己点的歌
+    if (currentSong && currentSong.requester === username) {
+      // 切掉当前歌曲
+      showToast(`${username}切掉当前歌曲: ${currentSong.name}`, 'info');
+      playNextSong();
+      return;
+    }
+
+    // 检查点歌列表中是否有该用户点的歌，如果有则删除
+    const userSongIndex = currentRequestPlaylist.findIndex(song => song.requester === username);
+    if (userSongIndex !== -1) {
+      const removedSong = currentRequestPlaylist[userSongIndex];
+      removeSongFromRequestPlaylist(userSongIndex);
+      showToast(`已切掉${username}在点歌列表中的歌曲: ${removedSong.name}`, 'info');
+    }
+  };
+
   // MARK: 添加黑名单关键词
   const handleAddToBlacklist = (e: React.FormEvent) => {
     e.preventDefault();
@@ -340,7 +384,13 @@ const SongRequest: React.FC = () => {
     try {
       setObsConfiguring(true);
 
-      if (!(await obsWebSocketService.connect())) {
+      try {
+        const { once } = await obsWebSocketService.connect();
+        once('ConnectionClosed', () => {
+          setObsSyncEnabled(false);
+        });
+      } catch (error) {
+        console.error(error);
         showToast('OBS 连接失败', 'error');
         return;
       }
