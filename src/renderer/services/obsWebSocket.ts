@@ -35,18 +35,23 @@ class OBSWebSocketService {
   }
 
   // 连接到OBS
-  async connect(): Promise<boolean> {
+  async connect(): Promise<{
+    on: (event: string, fn: (...args: any[]) => void) => void;
+    once: (event: string, fn: (...args: any[]) => void) => void;
+    off: (event: string, fn: (...args: any[]) => void) => void;
+  }> {
     if (this.isConnected) {
-      return true;
+      return { on: this.obs.on.bind(this.obs), once: this.obs.once.bind(this.obs), off: this.obs.off.bind(this.obs) };
     }
     await this.obs.connect(`ws://${this.config.address}:${this.config.port}`, this.config.password);
     this.isConnected = true;
 
     this.obs.once('ConnectionClosed', () => {
+      console.log('OBS ConnectionClosed');
       this.isConnected = false;
     });
 
-    return true;
+    return { on: this.obs.on.bind(this.obs), once: this.obs.once.bind(this.obs), off: this.obs.off.bind(this.obs) };
   }
 
   // 断开连接
@@ -158,9 +163,9 @@ class OBSWebSocketService {
           const songArtist = Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist;
           return playlistTemplate
             .replace(/{序号}/g, (index + 1).toString())
-            .replace(/{歌曲名}/g, song.name || '未知歌曲')
-            .replace(/{歌手}/g, songArtist || '未知歌手')
-            .replace(/{点歌者}/g, song.requester || '系统');
+            .replace(/{歌曲名}/g, song.name || '[未知歌曲]')
+            .replace(/{歌手}/g, songArtist || '[未知歌手]')
+            .replace(/{点歌者}/g, song.requester || '[系统]');
         })
         .join('\n');
     } else {
@@ -169,9 +174,9 @@ class OBSWebSocketService {
 
     // 渲染主模板
     return template
-      .replace(/{歌曲名}/g, songInfo.name || '未知歌曲')
-      .replace(/{歌手}/g, artist || '未知歌手')
-      .replace(/{点歌者}/g, songInfo.requester || '系统')
+      .replace(/{歌曲名}/g, songInfo.name || '[未知歌曲]')
+      .replace(/{歌手}/g, artist || '[未知歌手]')
+      .replace(/{点歌者}/g, songInfo.requester || '[系统]')
       .replace(/{点歌列表}/g, playlistText);
   }
 
