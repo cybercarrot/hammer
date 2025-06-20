@@ -22,7 +22,7 @@ class OBSWebSocketService {
   private obs: OBSWebSocket;
   private config: OBSConfig;
   private isConnected: boolean = false;
-  private sourceName = '点歌机';
+  private sourceName = '锤子播放状态';
 
   constructor() {
     this.obs = new OBSWebSocket();
