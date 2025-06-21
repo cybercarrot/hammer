@@ -131,6 +131,9 @@ const createWindow = () => {
     },
   });
 
+  // 启用内容保护，不会被OBS捕获到
+  mainWindow.setContentProtection(true);
+
   // 让窗口状态管理器监视窗口（自动保存和恢复窗口位置和大小）
   windowState.manage(mainWindow);
 
@@ -174,6 +177,9 @@ const createChatOverlayWindow = () => {
       nodeIntegration: false,
     },
   });
+
+  // 启用内容保护，不会被OBS捕获到
+  chatOverlayWindow.setContentProtection(true);
 
   windowState.manage(chatOverlayWindow);
 
