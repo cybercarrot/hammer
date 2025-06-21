@@ -17,9 +17,9 @@ interface UserState {
   // 设置登录状态
   setLoginState: (
     isLoggedIn: boolean,
-    username?: string,
-    userId?: number | null,
-    avatar?: string,
+    username: string,
+    userId: number | null,
+    avatar: string,
     roomId?: number | null
   ) => void;
   // 清除登录状态
@@ -27,7 +27,7 @@ interface UserState {
   // 退出登录
   logout: () => void;
   // 检查现有登录状态
-  checkExistingLogin: () => Promise<boolean>;
+  refreshUserData: () => Promise<boolean>;
 }
 
 const USER_STORAGE_KEY = 'user-store';
@@ -42,7 +42,7 @@ export const useUserStore = create<UserState>()(
       avatar: '',
       roomId: null,
 
-      setLoginState: (isLoggedIn, username = '', userId = null, avatar = '', roomId = null) =>
+      setLoginState: (isLoggedIn, username, userId, avatar, roomId = null) =>
         set({
           isLoggedIn,
           username,
@@ -65,53 +65,35 @@ export const useUserStore = create<UserState>()(
         if (window.electron) {
           window.electron.utils.sendToMain('app:logout', null);
         }
-
         // 重置状态
-        set({
-          isLoggedIn: false,
-          username: '',
-          userId: null,
-          avatar: '',
-          roomId: null,
-        });
+        get().clearLoginState();
       },
 
-      // 检查是否已经登录，验证登录状态
-      checkExistingLogin: async () => {
+      // 刷新用户信息和直播间信息
+      refreshUserData: async () => {
         try {
-          // 尝试获取用户信息，验证登录状态
           const userInfo = await BilibiliService.getUserInfo();
 
-          // 如果登录有效，更新登录状态
-          if (userInfo && userInfo.isLogin) {
+          // 如果已登录，接着获取直播间信息
+          if (userInfo?.isLogin) {
+            const liveRoomInfo = await BilibiliService.getLiveRoomInfo(userInfo.mid);
             set({
               isLoggedIn: true,
               username: userInfo.uname,
               userId: userInfo.mid,
               avatar: userInfo.face,
+              roomId: liveRoomInfo?.room_id || null,
             });
             return true;
           } else {
             // 如果登录已失效，更新为未登录状态
-            set({
-              isLoggedIn: false,
-              username: '',
-              userId: null,
-              avatar: '',
-              roomId: null,
-            });
+            get().clearLoginState();
             return false;
           }
         } catch (error) {
           console.error('验证登录状态失败', error);
           // 出错时也更新为未登录状态
-          set({
-            isLoggedIn: false,
-            username: '',
-            userId: null,
-            avatar: '',
-            roomId: null,
-          });
+          get().clearLoginState();
           return false;
         }
       },

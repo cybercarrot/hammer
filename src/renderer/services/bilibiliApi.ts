@@ -1,87 +1,78 @@
 import axios from 'axios';
-import { useUserStore } from '../store/userStore';
 
 // QR码生成接口返回的数据格式
 export interface QRCodeResponse {
-  url: string;
-  qrcode_key: string;
+  code: number;
+  message: string;
+  ttl: number;
+  data: {
+    url: string;
+    qrcode_key: string;
+  };
 }
 
 // QR码扫描状态接口返回的数据格式
 export interface QRCodePollResponse {
-  url: string;
-  refresh_token: string;
-  timestamp: number;
   code: number;
   message: string;
+  ttl: number;
+  data: {
+    url: string;
+    refresh_token: string;
+    timestamp: number;
+    code: number;
+    message: string;
+  };
 }
 
 // 用户基本信息接口
 export interface UserInfoResponse {
-  isLogin: boolean; // 是否登录
-  email_verified: number;
-  face: string; // 头像URL
-  face_nft: number;
-  face_nft_type: number;
-  level_info: {
-    current_level: number;
-    current_min: number;
-    current_exp: number;
-    next_exp: string;
-  };
-  mid: number; // 用户ID
-  mobile_verified: number;
-  money: number; // 硬币数
-  moral: number;
-  official: {
-    role: number;
-    title: string;
-    desc: string;
-    type: number;
-  };
-  officialVerify: {
-    type: number;
-    desc: string;
-  };
-  pendant: {
-    pid: number;
-    name: string;
-    image: string;
-    expire: number;
-    image_enhance: string;
-    image_enhance_frame: string;
-    n_pid: number;
-  };
-  scores: number;
-  uname: string; // 用户名
-  vipDueDate: number;
-  vipStatus: number;
-  vipType: number;
-  vip_pay_type: number;
-  vip_theme_type: number;
-  vip_label: {
-    path: string;
-    text: string;
-    label_theme: string;
-    text_color: string;
-    bg_style: number;
-    bg_color: string;
-    border_color: string;
-    use_img_label: boolean;
-    img_label_uri_hans: string;
-    img_label_uri_hant: string;
-    img_label_uri_hans_static: string;
-    img_label_uri_hant_static: string;
-  };
-  vip_avatar_subscript: number;
-  vip_nickname_color: string;
-  vip: {
-    type: number;
-    status: number;
-    due_date: number;
+  code: number;
+  message: string;
+  ttl: number;
+  data: {
+    isLogin: boolean; // 是否登录
+    email_verified: number;
+    face: string; // 头像URL
+    face_nft: number;
+    face_nft_type: number;
+    level_info: {
+      current_level: number;
+      current_min: number;
+      current_exp: number;
+      next_exp: string;
+    };
+    mid: number; // 用户ID
+    mobile_verified: number;
+    money: number; // 硬币数
+    moral: number;
+    official: {
+      role: number;
+      title: string;
+      desc: string;
+      type: number;
+    };
+    officialVerify: {
+      type: number;
+      desc: string;
+    };
+    pendant: {
+      pid: number;
+      name: string;
+      image: string;
+      expire: number;
+      image_enhance: string;
+      image_enhance_frame: string;
+      n_pid: number;
+    };
+    scores: number;
+    uname: string; // 用户名
+    vipDueDate: number;
+    vipStatus: number;
+    vipType: number;
     vip_pay_type: number;
-    theme_type: number;
-    label: {
+    vip_theme_type: number;
+    vip_label: {
       path: string;
       text: string;
       label_theme: string;
@@ -95,40 +86,64 @@ export interface UserInfoResponse {
       img_label_uri_hans_static: string;
       img_label_uri_hant_static: string;
     };
-    avatar_subscript: number;
-    nickname_color: string;
-    role: number;
-    avatar_subscript_url: string;
-    tv_vip_status: number;
-    tv_vip_pay_type: number;
-    tv_due_date: number;
-    avatar_icon: {
-      icon_type: number;
-      icon_resource: Record<string, any>;
+    vip_avatar_subscript: number;
+    vip_nickname_color: string;
+    vip: {
+      type: number;
+      status: number;
+      due_date: number;
+      vip_pay_type: number;
+      theme_type: number;
+      label: {
+        path: string;
+        text: string;
+        label_theme: string;
+        text_color: string;
+        bg_style: number;
+        bg_color: string;
+        border_color: string;
+        use_img_label: boolean;
+        img_label_uri_hans: string;
+        img_label_uri_hant: string;
+        img_label_uri_hans_static: string;
+        img_label_uri_hant_static: string;
+      };
+      avatar_subscript: number;
+      nickname_color: string;
+      role: number;
+      avatar_subscript_url: string;
+      tv_vip_status: number;
+      tv_vip_pay_type: number;
+      tv_due_date: number;
+      avatar_icon: {
+        icon_type: number;
+        icon_resource: Record<string, any>;
+      };
     };
+    wallet: {
+      mid: number;
+      bcoin_balance: number;
+      coupon_balance: number;
+      coupon_due_time: number;
+    };
+    has_shop: boolean;
+    shop_url: string;
+    answer_status: number;
+    is_senior_member: number;
+    wbi_img: {
+      img_url: string;
+      sub_url: string;
+    };
+    is_jury: boolean;
+    name_render: any;
   };
-  wallet: {
-    mid: number;
-    bcoin_balance: number;
-    coupon_balance: number;
-    coupon_due_time: number;
-  };
-  has_shop: boolean;
-  shop_url: string;
-  answer_status: number;
-  is_senior_member: number;
-  wbi_img: {
-    img_url: string;
-    sub_url: string;
-  };
-  is_jury: boolean;
-  name_render: any;
 }
 
 // 直播间信息接口
 export interface LiveRoomInfoResponse {
   code: number;
   message: string;
+  ttl: number;
   data: {
     room_id: number;
     uid: number;
@@ -156,16 +171,16 @@ export class BilibiliService {
   private static readonly LIVE_ROOM_INFO_URL = 'https://api.live.bilibili.com/live_user/v1/Master/info';
 
   /**
-   * 获取QR码数据
+   * 生成登录二维码
    * @returns 返回QR码URL和key
    */
-  public static async getQRCode(): Promise<QRCodeResponse> {
+  public static async generateQRCode(): Promise<QRCodeResponse['data']> {
     try {
-      const response = await axios.get(this.QR_GENERATE_URL);
+      const response = await axios.get<QRCodeResponse>(this.QR_GENERATE_URL);
       const data = response.data;
 
       if (data.code === 0 && data.data) {
-        return data.data as QRCodeResponse;
+        return data.data;
       } else {
         throw new Error(`获取二维码失败: ${data.message}`);
       }
@@ -180,10 +195,10 @@ export class BilibiliService {
    * @param qrcodeKey 二维码Key
    * @returns 返回扫码状态
    */
-  public static async pollQRCodeStatus(qrcodeKey: string): Promise<QRCodePollResponse> {
+  public static async pollQRCodeStatus(qrcodeKey: string): Promise<QRCodePollResponse['data']> {
     try {
       // 注意：这里使用withCredentials以便接收和发送跨域cookie
-      const response = await axios.get(`${this.QR_POLL_URL}?qrcode_key=${qrcodeKey}`, {
+      const response = await axios.get<QRCodePollResponse>(`${this.QR_POLL_URL}?qrcode_key=${qrcodeKey}`, {
         withCredentials: true,
       });
       const data = response.data;
@@ -194,7 +209,7 @@ export class BilibiliService {
           // 浏览器会自动处理 Cookie
           console.log('登录成功，Cookie由浏览器自动处理');
         }
-        return data.data as QRCodePollResponse;
+        return data.data;
       } else {
         throw new Error(`轮询二维码状态失败: ${data.message}`);
       }
@@ -209,14 +224,14 @@ export class BilibiliService {
    * @param uid 用户ID
    * @returns 直播间信息
    */
-  public static async getLiveRoomInfo(uid: number): Promise<LiveRoomInfoResponse> {
+  public static async getLiveRoomInfo(uid: number): Promise<LiveRoomInfoResponse['data']> {
     try {
       const config = { withCredentials: true };
-      const response = await axios.get(`${this.LIVE_ROOM_INFO_URL}?uid=${uid}`, config);
+      const response = await axios.get<LiveRoomInfoResponse>(`${this.LIVE_ROOM_INFO_URL}?uid=${uid}`, config);
       const data = response.data;
 
       if (data.code === 0 && data.data) {
-        return data;
+        return data.data;
       } else {
         throw new Error(`获取直播间信息失败: ${data.message}`);
       }
@@ -230,38 +245,16 @@ export class BilibiliService {
    * 获取用户信息
    * @returns 用户信息
    */
-  public static async getUserInfo(): Promise<UserInfoResponse> {
+  public static async getUserInfo(): Promise<UserInfoResponse['data']> {
     try {
       // 使用withCredentials让浏览器自动发送cookie
       const config = { withCredentials: true };
 
-      const response = await axios.get(this.USER_INFO_URL, config);
+      const response = await axios.get<UserInfoResponse>(this.USER_INFO_URL, config);
       const data = response.data;
 
       if (data.code === 0 && data.data) {
-        const userInfo = data.data as UserInfoResponse;
-
-        // 如果用户已登录，更新userStore中的用户信息
-        if (userInfo.isLogin) {
-          // 在静态方法中，我们不能直接使用hook
-          // 但我们可以获取store状态和操作
-          const userStore = useUserStore.getState();
-
-          // 获取直播间信息
-          try {
-            const liveRoomInfo = await this.getLiveRoomInfo(userInfo.mid);
-            if (liveRoomInfo.code === 0 && liveRoomInfo.data) {
-              userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face, liveRoomInfo.data.room_id);
-            } else {
-              userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
-            }
-          } catch (error) {
-            console.error('获取直播间信息失败，仅更新用户信息:', error);
-            userStore.setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
-          }
-        }
-
-        return userInfo;
+        return data.data;
       } else {
         throw new Error(`获取用户信息失败: ${data.message}`);
       }

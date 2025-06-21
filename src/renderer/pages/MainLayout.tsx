@@ -14,21 +14,23 @@ import { useSettingStore } from '../store/settingStore';
 // MARK: 主布局
 const MainLayout: React.FC = () => {
   // 获取检查登录状态的方法
-  const { checkExistingLogin } = useUserStore();
+  const { isLoggedIn, refreshUserData } = useUserStore();
   // 获取当前选中的tab和设置方法
   const { currentTab, setCurrentTab } = useSettingStore();
 
   // 组件挂载时检查登录状态
   useEffect(() => {
     // 应用启动时验证登录状态
-    checkExistingLogin()
-      .then(isLoggedIn => {
-        console.log('登录状态验证结果:', isLoggedIn);
-      })
-      .catch(error => {
-        console.error('验证登录状态出错:', error);
-      });
-  }, [checkExistingLogin]);
+    if (isLoggedIn) {
+      refreshUserData()
+        .then(() => {
+          console.log('更新用户信息');
+        })
+        .catch(error => {
+          console.error('验证登录状态出错:', error);
+        });
+    }
+  }, []);
 
   return (
     <Tabs.Root value={currentTab} onValueChange={setCurrentTab}>

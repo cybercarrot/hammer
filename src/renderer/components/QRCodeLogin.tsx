@@ -8,7 +8,7 @@ import { useToast } from '../context/ToastContext';
 
 const QRCodeLogin: React.FC = () => {
   // 登录状态
-  const { setLoginState } = useUserStore();
+  const { refreshUserData } = useUserStore();
   const { showToast } = useToast();
 
   // 对话框状态
@@ -55,7 +55,7 @@ const QRCodeLogin: React.FC = () => {
       clearPollingTimer();
 
       // 获取二维码数据
-      const qrData = await BilibiliService.getQRCode();
+      const qrData = await BilibiliService.generateQRCode();
 
       // 生成二维码图片
       const qrImage = await QRCode.toDataURL(qrData.url, {
@@ -133,17 +133,11 @@ const QRCodeLogin: React.FC = () => {
   // 处理登录成功
   const handleLoginSuccess = async () => {
     try {
-      // 获取用户信息
-      const userInfo = await BilibiliService.getUserInfo();
+      // 刷新用户信息和直播间信息
+      const isLoggedIn = await refreshUserData();
 
-      if (userInfo && userInfo.isLogin) {
-        // 登录成功，更新状态
-        setLoginState(true, userInfo.uname, userInfo.mid, userInfo.face);
-
-        // 关闭对话框
+      if (isLoggedIn) {
         setOpen(false);
-
-        // 显示成功提示
         showToast('账号关联成功', 'success');
       } else {
         setScanStatus('登录成功，但无法获取用户信息');
