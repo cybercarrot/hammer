@@ -10,6 +10,7 @@ import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/them
 import packageJson from '../../../package.json';
 import { useUserStore } from '../store/userStore';
 import { useSettingStore } from '../store/settingStore';
+import { useToast } from '../context/ToastContext';
 
 // MARK: 主布局
 const MainLayout: React.FC = () => {
@@ -17,16 +18,20 @@ const MainLayout: React.FC = () => {
   const { isLoggedIn, refreshUserData } = useUserStore();
   // 获取当前选中的tab和设置方法
   const { currentTab, setCurrentTab } = useSettingStore();
+  const { showToast } = useToast();
 
   // 组件挂载时检查登录状态
   useEffect(() => {
     // 应用启动时验证登录状态
     if (isLoggedIn) {
       refreshUserData()
-        .then(() => {
-          console.log('更新用户信息');
+        .then(result => {
+          if (!result) {
+            showToast('登录状态已过期，请重新登录', 'error');
+          }
         })
         .catch(error => {
+          showToast('验证登录状态出错', 'error');
           console.error('验证登录状态出错:', error);
         });
     }
