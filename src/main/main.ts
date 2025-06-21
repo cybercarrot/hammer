@@ -5,6 +5,7 @@ import started from 'electron-squirrel-startup';
 import { setupCookieHandlers } from './cookies';
 import windowStateKeeper from 'electron-window-state';
 import { wsServer } from './websocket';
+import { WINDOW_CONFIG } from './config';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -63,8 +64,8 @@ const quitApp = () => {
 const createWindow = () => {
   // 加载窗口状态管理器
   const windowState = windowStateKeeper({
-    defaultWidth: 1920,
-    defaultHeight: 1080,
+    defaultWidth: WINDOW_CONFIG.MAIN_WINDOW.WIDTH,
+    defaultHeight: WINDOW_CONFIG.MAIN_WINDOW.HEIGHT,
   });
 
   // Create the browser window.
@@ -313,8 +314,8 @@ ipcMain.handle('window:reset-size-and-position', () => {
       {
         x: 0,
         y: 0,
-        width: 1920,
-        height: 1080,
+        width: WINDOW_CONFIG.MAIN_WINDOW.WIDTH,
+        height: WINDOW_CONFIG.MAIN_WINDOW.HEIGHT,
       },
       true
     );

@@ -18,6 +18,7 @@ import { WebviewTag } from 'electron';
 import { useToast } from '../context/ToastContext';
 import { useSettingStore } from '../store/settingStore';
 import { useUserStore } from '../store/userStore';
+import { WINDOW_CONFIG } from '../../main/config';
 
 interface DanmakuViewerProps {
   url?: string;
@@ -45,7 +46,11 @@ const DanmakuViewer: React.FC<DanmakuViewerProps> = ({ url = 'https://chat.lapla
   const openInNewWindow = () => {
     try {
       // 使用window.open()创建新窗口
-      const newWindow = window.open(url, '_blank', 'width=1280,height=720');
+      const newWindow = window.open(
+        url,
+        '_blank',
+        `width=${WINDOW_CONFIG.DANMAKU_VIEWER.WIDTH},height=${WINDOW_CONFIG.DANMAKU_VIEWER.HEIGHT}`
+      );
       if (newWindow) {
         newWindow.focus();
         console.log('已在新窗口中打开:', url);
