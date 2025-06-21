@@ -1065,7 +1065,7 @@ const SongRequest: React.FC = () => {
           同步 OBS 配置
         </Text>
         <Tooltip
-          content="需要先在 OBS 软件的 [顶部菜单栏] -> [工具] -> [WebSocket 服务器设置] 中勾选 [开启 WebSocket 服务器]，同时保持端口和密码与连接配置中一致(嫌麻烦可以去掉 [开启身份认证] 的勾选)"
+          content="需要先在 OBS 程序的 [顶部菜单栏] -> [工具] -> [WebSocket 服务器设置] 中勾选 [开启 WebSocket 服务器]，同时保持端口和密码与连接配置中一致(嫌麻烦可以去掉 [开启身份认证] 的勾选)"
           side="top"
         >
           <InfoCircledIcon width={14} height={14} className="ml-1 cursor-help" />

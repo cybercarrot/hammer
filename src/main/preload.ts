@@ -21,6 +21,11 @@ interface ElectronAPI {
       error?: string;
     }>;
   };
+  app: {
+    quit: () => Promise<{
+      success: boolean;
+    }>;
+  };
 }
 
 declare global {
@@ -56,6 +61,14 @@ contextBridge.exposeInMainWorld('electron', {
     // 重置窗口大小与位置
     resetSizeAndPosition: () => {
       return ipcRenderer.invoke('window:reset-size-and-position');
+    },
+  },
+
+  // App相关操作
+  app: {
+    // 退出应用程序
+    quit: () => {
+      return ipcRenderer.invoke('app:quit');
     },
   },
 });
