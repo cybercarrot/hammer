@@ -9,11 +9,14 @@ import UserProfile from '../components/UserProfile';
 import { Badge, Flex, Tabs, Box, Text, Container, Heading } from '@radix-ui/themes';
 import packageJson from '../../../package.json';
 import { useUserStore } from '../store/userStore';
+import { useSettingStore } from '../store/settingStore';
 
 // MARK: 主布局
 const MainLayout: React.FC = () => {
   // 获取检查登录状态的方法
   const { checkExistingLogin } = useUserStore();
+  // 获取当前选中的tab和设置方法
+  const { currentTab, setCurrentTab } = useSettingStore();
 
   // 组件挂载时检查登录状态
   useEffect(() => {
@@ -28,7 +31,7 @@ const MainLayout: React.FC = () => {
   }, [checkExistingLogin]);
 
   return (
-    <Tabs.Root defaultValue="danmaku">
+    <Tabs.Root value={currentTab} onValueChange={setCurrentTab}>
       <Flex direction="column" height="100vh">
         {/* 顶部栏 */}
         <Box p="2" className="shadow-sm">
@@ -49,7 +52,7 @@ const MainLayout: React.FC = () => {
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
                 <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
                 <Tabs.Trigger value="tools">小工具</Tabs.Trigger>
-                <Tabs.Trigger value="settings">设置</Tabs.Trigger>
+                {/* <Tabs.Trigger value="settings">设置</Tabs.Trigger> */}
               </Tabs.List>
             </Box>
 

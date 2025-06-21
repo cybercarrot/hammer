@@ -33,6 +33,11 @@ interface SettingState {
   // 切换主题
   toggleTheme: () => void;
 
+  // 当前选中的tab
+  currentTab: string;
+  // 设置当前选中的tab
+  setCurrentTab: (tab: string) => void;
+
   // 弹幕机配置
   danmakuConfig: DanmakuConfig;
   // 更新弹幕机配置
@@ -135,6 +140,11 @@ export const useSettingStore = create<SettingState>()(
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         get().setTheme(newTheme);
       },
+
+      // 当前选中的tab
+      currentTab: 'danmaku',
+      // 设置当前选中的tab
+      setCurrentTab: tab => set({ currentTab: tab }),
 
       // 弹幕机
       danmakuConfig: getInitialDanmakuConfig(),
@@ -246,6 +256,7 @@ export const useSettingStore = create<SettingState>()(
       name: SETTING_STORAGE_KEY, // 只保存必要的状态
       partialize: state => ({
         theme: state.theme,
+        currentTab: state.currentTab,
         danmakuConfig: state.danmakuConfig,
         obsConfig: state.obsConfig,
         blacklist: state.blacklist,
