@@ -15,6 +15,12 @@ interface ElectronAPI {
       error?: string;
     }>;
   };
+  window: {
+    resetSizeAndPosition: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+  };
 }
 
 declare global {
@@ -42,6 +48,14 @@ contextBridge.exposeInMainWorld('electron', {
     // 获取指定域名的cookies
     getCookiesByDomains: (domains: string[]) => {
       return ipcRenderer.invoke('get-cookies-by-domains', domains);
+    },
+  },
+
+  // Window相关操作
+  window: {
+    // 重置窗口大小与位置
+    resetSizeAndPosition: () => {
+      return ipcRenderer.invoke('window:reset-size-and-position');
     },
   },
 });

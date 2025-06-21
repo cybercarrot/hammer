@@ -305,5 +305,27 @@ ipcMain.on('app:logout', async () => {
   }
 });
 
+// 重置窗口大小与位置
+ipcMain.handle('window:reset-size-and-position', () => {
+  if (mainWindow) {
+    // 重置窗口到默认大小和位置
+    mainWindow.setBounds(
+      {
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1080,
+      },
+      true
+    );
+
+    // 居中显示窗口
+    mainWindow.center();
+
+    return { success: true };
+  }
+  return { success: false, error: 'Main window not found' };
+});
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.

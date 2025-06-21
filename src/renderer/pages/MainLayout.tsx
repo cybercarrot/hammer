@@ -52,7 +52,7 @@ const MainLayout: React.FC = () => {
                 <Tabs.Trigger value="control">控制台</Tabs.Trigger>
                 <Tabs.Trigger value="song">点歌机</Tabs.Trigger>
                 <Tabs.Trigger value="tools">小工具</Tabs.Trigger>
-                {/* <Tabs.Trigger value="settings">设置</Tabs.Trigger> */}
+                <Tabs.Trigger value="settings">其他设置</Tabs.Trigger>
               </Tabs.List>
             </Box>
 
