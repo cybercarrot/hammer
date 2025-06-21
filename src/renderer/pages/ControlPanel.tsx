@@ -10,7 +10,9 @@ const ControlPanel: React.FC = () => {
   const webviewRef = useRef<WebviewTag>(null);
   const [webviewLoading, setWebviewLoading] = useState(true);
   const { consoleConnected, setConsoleConnected } = useSettingStore();
-  const [localRoomId, setLocalRoomId] = useState<string>(roomId + '');
+  const [localRoomId, setLocalRoomId] = useState<number>();
+  const [chatOverlayOpen, setChatOverlayOpen] = useState(false);
+  const [closingChatOverlay, setClosingChatOverlay] = useState(false);
 
   // 注入并初始化 event_bridge_settings 的代码
   const injectEventBridgeSettings = useCallback((webview: WebviewTag) => {
@@ -68,6 +70,71 @@ const ControlPanel: React.FC = () => {
     };
   }, [consoleConnected, handleWebviewLoad]);
 
+  // 打开弹幕悬浮框
+  const handleOpenChatOverlay = async () => {
+    try {
+      const result = await window.electron.chatOverlay.open();
+      if (result.success) {
+        setChatOverlayOpen(true);
+        console.log('弹幕悬浮框已打开，窗口ID:', result.windowId);
+      } else {
+        console.error('打开弹幕悬浮框失败:', result.error);
+      }
+    } catch (error) {
+      console.error('打开弹幕悬浮框时出错:', error);
+    }
+  };
+
+  // 关闭弹幕悬浮框
+  const handleCloseChatOverlay = async () => {
+    try {
+      setClosingChatOverlay(true);
+      const result = await window.electron.chatOverlay.close();
+      if (result.success) {
+        setChatOverlayOpen(false);
+      } else {
+        console.error('关闭弹幕悬浮框失败:', result.error);
+      }
+    } catch (error) {
+      console.error('关闭弹幕悬浮框时出错:', error);
+    } finally {
+      setClosingChatOverlay(false);
+    }
+  };
+
+  // 切换弹幕悬浮框状态
+  const handleToggleChatOverlay = () => {
+    if (chatOverlayOpen) {
+      handleCloseChatOverlay();
+    } else {
+      handleOpenChatOverlay();
+    }
+  };
+
+  // 重置弹幕悬浮窗大小与位置
+  const handleResetChatOverlaySizeAndPosition = async () => {
+    try {
+      const result = await window.electron.chatOverlay.resetSizeAndPosition();
+      if (result.success) {
+        console.log('弹幕悬浮窗大小与位置重置成功');
+      } else {
+        console.error('重置弹幕悬浮窗失败:', result.error);
+      }
+    } catch (error) {
+      console.error('重置弹幕悬浮窗大小与位置时出错:', error);
+    }
+  };
+
+  // 监听弹幕浮层窗口关闭事件
+  useEffect(() => {
+    const cleanup = window.electron.chatOverlay.onClosed(() => {
+      setChatOverlayOpen(false);
+      console.log('弹幕浮层窗口已关闭');
+    });
+
+    return cleanup;
+  }, []);
+
   if (!roomId) {
     return (
       <Callout.Root color="blue" size="1" className="mb-3 !p-2">
@@ -92,18 +159,42 @@ const ControlPanel: React.FC = () => {
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
       <Flex align="center" gap="2">
-        <Text>房间号</Text>
-        <TextField.Root
-          className="w-24"
-          placeholder="房间号"
-          value={localRoomId}
-          onChange={e => setLocalRoomId(e.target.value)}
-        />
-        <Tooltip content="最好先开启 OBS 的 WebSocket 服务器，以便在控制台中便捷控制直播与场景" side="top">
-          <Button variant="solid" onClick={() => setConsoleConnected(!consoleConnected)} disabled={!localRoomId}>
-            打开控制台并连接弹幕与 OBS
+        {!consoleConnected ? (
+          <>
+            <Text>房间号</Text>
+            <TextField.Root
+              className="w-24"
+              placeholder="房间号"
+              type="number"
+              defaultValue={roomId}
+              value={localRoomId}
+              onChange={e => setLocalRoomId(Number(e.target.value))}
+            />
+            <Tooltip content="最好先开启 OBS 的 WebSocket 服务器，以便在控制台中便捷控制直播与场景" side="top">
+              <Button
+                variant="solid"
+                onClick={() => setConsoleConnected(!consoleConnected)}
+                disabled={!localRoomId && !roomId}
+              >
+                打开控制台并连接弹幕与 OBS
+              </Button>
+            </Tooltip>
+          </>
+        ) : (
+          <Button
+            variant="solid"
+            onClick={handleToggleChatOverlay}
+            disabled={closingChatOverlay}
+            color={chatOverlayOpen ? 'red' : undefined}
+          >
+            {chatOverlayOpen ? '关闭弹幕悬浮框' : '打开弹幕悬浮框'}
           </Button>
-        </Tooltip>
+        )}
+        {chatOverlayOpen && (
+          <Button size="2" onClick={handleResetChatOverlaySizeAndPosition}>
+            重置弹幕悬浮窗大小位置
+          </Button>
+        )}
       </Flex>
     </Box>
   );
@@ -113,7 +204,7 @@ const ControlPanel: React.FC = () => {
     <Box position="relative" flexGrow="1" className="border rounded-sm [border-color:var(--gray-5)]">
       <webview
         ref={webviewRef}
-        src={`https://chat.laplace.live/dashboard/${localRoomId}`}
+        src={`https://chat.laplace.live/dashboard/${localRoomId || roomId}`}
         className="h-full"
         // @ts-expect-error 官方类型定义有误
         allowpopups="true"
@@ -129,7 +220,8 @@ const ControlPanel: React.FC = () => {
 
   return (
     <Flex direction="column" height="100%">
-      {consoleConnected ? renderConsolePanel() : renderOperationSection()}
+      {renderOperationSection()}
+      {consoleConnected ? renderConsolePanel() : null}
     </Flex>
   );
 };

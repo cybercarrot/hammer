@@ -37,7 +37,7 @@ const Settings: React.FC = () => {
       </Flex>
       <Flex gap="2" align="center">
         <Button size="2" onClick={handleResetWindowSizeAndPosition}>
-          重置窗口大小与位置
+          重置主窗口大小位置
         </Button>
       </Flex>
     </Box>

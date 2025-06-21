@@ -39,11 +39,22 @@ const config: ForgeConfig = {
           config: 'vite.preload.config.ts',
           target: 'preload',
         },
+        {
+          entry: {
+            'preload-chat-overlay': 'chat-overlay/src/preload.ts',
+          },
+          config: 'vite.preload-chat-overlay.config.ts',
+          target: 'preload',
+        },
       ],
       renderer: [
         {
           name: 'main_window',
           config: 'vite.renderer.config.mts',
+        },
+        {
+          name: 'chat_overlay_window',
+          config: 'vite.renderer-chat-overlay.config.ts',
         },
       ],
     }),

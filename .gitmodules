@@ -1,0 +1,3 @@
+[submodule "chat-overlay"]
+	path = chat-overlay
+	url = https://github.com/laplace-live/chat-overlay.git

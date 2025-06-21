@@ -26,6 +26,22 @@ interface ElectronAPI {
       success: boolean;
     }>;
   };
+  chatOverlay: {
+    open: () => Promise<{
+      success: boolean;
+      windowId?: number;
+      error?: string;
+    }>;
+    close: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    onClosed: (callback: () => void) => () => void;
+    resetSizeAndPosition: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+  };
 }
 
 declare global {
@@ -69,6 +85,30 @@ contextBridge.exposeInMainWorld('electron', {
     // 退出应用程序
     quit: () => {
       return ipcRenderer.invoke('app:quit');
+    },
+  },
+
+  // ChatOverlay相关操作
+  chatOverlay: {
+    // 打开聊天窗口
+    open: () => {
+      return ipcRenderer.invoke('chat-overlay:open');
+    },
+    // 关闭聊天窗口
+    close: () => {
+      return ipcRenderer.invoke('chat-overlay:close');
+    },
+    // 监听弹幕浮层关闭事件
+    onClosed: (callback: () => void) => {
+      ipcRenderer.on('chat-overlay:closed', callback);
+      // 返回清理函数
+      return () => {
+        ipcRenderer.removeListener('chat-overlay:closed', callback);
+      };
+    },
+    // 重置聊天窗口大小与位置
+    resetSizeAndPosition: () => {
+      return ipcRenderer.invoke('chat-overlay:reset-size-and-position');
     },
   },
 });
