@@ -17,9 +17,10 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
+      title: '锤子',
+      iconUrl: 'https://img.picui.cn/free/2025/06/28/685f5bdde3af6.ico',
       authors: '阿酒(zack)',
       description: '一把锤子，专门敲打阿B直播',
-      iconUrl: 'https://img.picui.cn/free/2025/06/28/685f5bdde3af6.ico',
     }),
     // new MakerZIP({}, ['darwin']),
     // new MakerRpm({}),
