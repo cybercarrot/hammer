@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*' # 匹配版本号格式，如 v1.0.0, v0.2.0 等
-    branches:
-      - master
 
 jobs:
   release:
