@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark-theme, .dark-theme *));
+
+@import '@radix-ui/themes/styles.css';
+
+body {
+  font-family: var(--default-font-family);
+  margin: 0;
+  padding: 0;
+}
+
+/* 添加主题切换的过渡效果 */
+/* .radix-themes {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+} */
+
+/* 导航项激活状态 */
+button.active {
+  font-weight: bold;
+}
+
+/* 覆盖 aplayer 的样式 */
+/* 暗黑模式 */
+.dark .aplayer {
+  background-color: var(--color-panel-translucent);
+}
+
+.aplayer-lrc:before,
+.aplayer-lrc:after {
+  content: none !important;
+}
+
+.aplayer-icon-menu {
+  display: none !important;
+}
+
+.aplayer.aplayer-withlist .aplayer-info {
+  border-bottom: none !important;
+}

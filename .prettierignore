@@ -1,0 +1,10 @@
+node_modules
+.vite
+dist
+build
+coverage
+.vscode
+.git
+package-lock.json
+*.md 
+chat-overlay
