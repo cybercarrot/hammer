@@ -2,7 +2,7 @@
   "name": "hammer",
   "productName": "锤子",
   "version": "0.1.0",
-  "description": "bilibili直播助手",
+  "description": "一把锤子，专门敲打阿B直播",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
