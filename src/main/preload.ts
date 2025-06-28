@@ -20,6 +20,15 @@ interface ElectronAPI {
       success: boolean;
       error?: string;
     }>;
+    setContentProtection: (enabled: boolean) => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    getContentProtectionSettings: () => Promise<{
+      success: boolean;
+      data?: { mainWindow: boolean; chatOverlayWindow: boolean };
+      error?: string;
+    }>;
   };
   app: {
     quit: () => Promise<{
@@ -27,7 +36,7 @@ interface ElectronAPI {
     }>;
   };
   chatOverlay: {
-    open: () => Promise<{
+    open: (contentProtectionEnabled?: boolean) => Promise<{
       success: boolean;
       windowId?: number;
       error?: string;
@@ -38,6 +47,10 @@ interface ElectronAPI {
     }>;
     onClosed: (callback: () => void) => () => void;
     resetSizeAndPosition: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    setContentProtection: (enabled: boolean) => Promise<{
       success: boolean;
       error?: string;
     }>;
@@ -78,6 +91,12 @@ contextBridge.exposeInMainWorld('electron', {
     resetSizeAndPosition: () => {
       return ipcRenderer.invoke('window:reset-size-and-position');
     },
+    setContentProtection: (enabled: boolean) => {
+      return ipcRenderer.invoke('window:set-content-protection', enabled);
+    },
+    getContentProtectionSettings: () => {
+      return ipcRenderer.invoke('window:get-content-protection-settings');
+    },
   },
 
   // App相关操作
@@ -91,8 +110,8 @@ contextBridge.exposeInMainWorld('electron', {
   // ChatOverlay相关操作
   chatOverlay: {
     // 打开聊天窗口
-    open: () => {
-      return ipcRenderer.invoke('chat-overlay:open');
+    open: (contentProtectionEnabled?: boolean) => {
+      return ipcRenderer.invoke('chat-overlay:open', contentProtectionEnabled);
     },
     // 关闭聊天窗口
     close: () => {
@@ -109,6 +128,9 @@ contextBridge.exposeInMainWorld('electron', {
     // 重置聊天窗口大小与位置
     resetSizeAndPosition: () => {
       return ipcRenderer.invoke('chat-overlay:reset-size-and-position');
+    },
+    setContentProtection: (enabled: boolean) => {
+      return ipcRenderer.invoke('chat-overlay:set-content-protection', enabled);
     },
   },
 });

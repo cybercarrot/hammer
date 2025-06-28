@@ -9,7 +9,7 @@ const ControlPanel: React.FC = () => {
   const { roomId } = useUserStore();
   const webviewRef = useRef<WebviewTag>(null);
   const [webviewLoading, setWebviewLoading] = useState(true);
-  const { consoleConnected, setConsoleConnected } = useSettingStore();
+  const { consoleConnected, setConsoleConnected, contentProtection } = useSettingStore();
   const [localRoomId, setLocalRoomId] = useState<number>();
   const [chatOverlayOpen, setChatOverlayOpen] = useState(false);
   const [closingChatOverlay, setClosingChatOverlay] = useState(false);
@@ -73,7 +73,7 @@ const ControlPanel: React.FC = () => {
   // 打开弹幕悬浮框
   const handleOpenChatOverlay = async () => {
     try {
-      const result = await window.electron.chatOverlay.open();
+      const result = await window.electron.chatOverlay.open(contentProtection.chatOverlayWindow);
       if (result.success) {
         setChatOverlayOpen(true);
         console.log('弹幕悬浮框已打开，窗口ID:', result.windowId);

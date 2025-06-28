@@ -79,6 +79,16 @@ interface SettingState {
   setSyncPlaylistId: (id: string) => void;
   // 设置同步用户ID
   setSyncUserId: (id: string) => void;
+
+  // 内容保护配置
+  contentProtection: {
+    mainWindow: boolean;
+    chatOverlayWindow: boolean;
+  };
+  // 设置主窗口内容保护
+  setMainWindowContentProtection: (enabled: boolean) => void;
+  // 设置弹幕浮层窗口内容保护
+  setChatOverlayWindowContentProtection: (enabled: boolean) => void;
 }
 
 const SETTING_STORAGE_KEY = 'setting-store';
@@ -251,6 +261,28 @@ export const useSettingStore = create<SettingState>()(
       setSyncPlaylistId: id => set({ syncPlaylistId: id }),
       // 设置同步用户ID
       setSyncUserId: id => set({ syncUserId: id }),
+
+      // 内容保护配置
+      contentProtection: {
+        mainWindow: true,
+        chatOverlayWindow: true,
+      },
+      // 设置主窗口内容保护
+      setMainWindowContentProtection: enabled =>
+        set(state => ({
+          contentProtection: {
+            ...state.contentProtection,
+            mainWindow: enabled,
+          },
+        })),
+      // 设置弹幕浮层窗口内容保护
+      setChatOverlayWindowContentProtection: enabled =>
+        set(state => ({
+          contentProtection: {
+            ...state.contentProtection,
+            chatOverlayWindow: enabled,
+          },
+        })),
     }),
     {
       name: SETTING_STORAGE_KEY, // 只保存必要的状态
@@ -263,6 +295,7 @@ export const useSettingStore = create<SettingState>()(
         prefixConfig: state.prefixConfig,
         syncPlaylistId: state.syncPlaylistId,
         syncUserId: state.syncUserId,
+        contentProtection: state.contentProtection,
       }),
       onRehydrateStorage: () => {
         // 当状态从存储中恢复后被调用

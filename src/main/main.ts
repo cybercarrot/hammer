@@ -132,7 +132,7 @@ const createWindow = () => {
   });
 
   // 启用内容保护，不会被OBS捕获到
-  mainWindow.setContentProtection(true);
+  // mainWindow.setContentProtection(true);
 
   // 让窗口状态管理器监视窗口（自动保存和恢复窗口位置和大小）
   windowState.manage(mainWindow);
@@ -179,7 +179,7 @@ const createChatOverlayWindow = () => {
   });
 
   // 启用内容保护，不会被OBS捕获到
-  chatOverlayWindow.setContentProtection(true);
+  // chatOverlayWindow.setContentProtection(true);
 
   windowState.manage(chatOverlayWindow);
 
@@ -289,12 +289,19 @@ ipcMain.handle('window:reset-size-and-position', () => {
 });
 
 // 打开chatOverlay窗口
-ipcMain.handle('chat-overlay:open', () => {
+ipcMain.handle('chat-overlay:open', async (event, contentProtectionEnabled = false) => {
   try {
     if (chatOverlayWindow) {
       chatOverlayWindow.destroy();
     }
     chatOverlayWindow = createChatOverlayWindow();
+
+    // 应用内容保护设置
+    if (contentProtectionEnabled) {
+      chatOverlayWindow.setContentProtection(true);
+      console.log('已应用弹幕浮层窗口内容保护设置');
+    }
+
     return { success: true, windowId: chatOverlayWindow.id };
   } catch (error) {
     console.error('Error creating chat overlay window:', error);
@@ -352,6 +359,46 @@ ipcMain.handle('chat-overlay:reset-size-and-position', () => {
 ipcMain.handle('app:quit', () => {
   quitApp();
   return { success: true };
+});
+
+// 设置主窗口内容保护
+ipcMain.handle('window:set-content-protection', (event, enabled: boolean) => {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setContentProtection(enabled);
+      return { success: true };
+    }
+    return { success: false, error: 'Main window not found or destroyed' };
+  } catch (error) {
+    console.error('Error setting main window content protection:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 设置弹幕浮层窗口内容保护
+ipcMain.handle('chat-overlay:set-content-protection', (event, enabled: boolean) => {
+  try {
+    if (chatOverlayWindow && !chatOverlayWindow.isDestroyed()) {
+      chatOverlayWindow.setContentProtection(enabled);
+      return { success: true };
+    }
+    return { success: false, error: 'Chat overlay window not found or destroyed' };
+  } catch (error) {
+    console.error('Error setting chat overlay window content protection:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 获取内容保护设置
+ipcMain.handle('window:get-content-protection-settings', () => {
+  try {
+    // 这里需要从渲染进程获取设置，暂时返回默认值
+    // 实际实现中，渲染进程会在应用启动时主动设置内容保护
+    return { success: true, data: { mainWindow: false, chatOverlayWindow: false } };
+  } catch (error) {
+    console.error('Error getting content protection settings:', error);
+    return { success: false, error: error.message };
+  }
 });
 
 // MARK: 弹幕浮层窗口IPC事件

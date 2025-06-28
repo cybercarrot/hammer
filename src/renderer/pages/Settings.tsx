@@ -1,8 +1,12 @@
 import React from 'react';
-import { Box, Button, Flex, Separator, Text } from '@radix-ui/themes';
+import { Box, Button, Flex, Separator, Text, Checkbox } from '@radix-ui/themes';
+import { useSettingStore } from '../store/settingStore';
 
 // MARK: 设置
 const Settings: React.FC = () => {
+  const { contentProtection, setMainWindowContentProtection, setChatOverlayWindowContentProtection } =
+    useSettingStore();
+
   // MARK: 重置窗口大小与位置
   const handleResetWindowSizeAndPosition = async () => {
     try {
@@ -14,6 +18,44 @@ const Settings: React.FC = () => {
       }
     } catch (error) {
       console.error('重置窗口大小与位置时出错:', error);
+    }
+  };
+
+  // MARK: 设置主窗口内容保护
+  const handleMainWindowContentProtectionChange = async (enabled: boolean) => {
+    try {
+      const result = await window.electron.window.setContentProtection(enabled);
+      if (result.success) {
+        setMainWindowContentProtection(enabled);
+        console.log('主窗口内容保护设置成功:', enabled);
+      } else {
+        console.error('设置主窗口内容保护失败:', result.error);
+      }
+    } catch (error) {
+      console.error('设置主窗口内容保护时出错:', error);
+    }
+  };
+
+  // MARK: 设置弹幕浮层窗口内容保护
+  const handleChatOverlayWindowContentProtectionChange = async (enabled: boolean) => {
+    try {
+      // 先更新设置值
+      setChatOverlayWindowContentProtection(enabled);
+
+      // 尝试设置浮层窗口内容保护（如果浮层窗口存在的话）
+      const result = await window.electron.chatOverlay.setContentProtection(enabled);
+      if (result.success) {
+        console.log('弹幕浮层窗口内容保护设置成功:', enabled);
+      } else {
+        // 如果浮层窗口不存在，这是正常情况，不需要报错
+        if (result.error && result.error.includes('not found')) {
+          console.log('弹幕浮层窗口未创建，设置已保存，将在窗口创建时应用');
+        } else {
+          console.error('设置弹幕浮层窗口内容保护失败:', result.error);
+        }
+      }
+    } catch (error) {
+      console.error('设置弹幕浮层窗口内容保护时出错:', error);
     }
   };
 
@@ -35,10 +77,30 @@ const Settings: React.FC = () => {
         </Text>
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
-      <Flex gap="2" align="center">
+      <Flex gap="2" align="center" mb="2">
         <Button size="2" onClick={handleResetWindowSizeAndPosition}>
           重置主窗口大小位置
         </Button>
+      </Flex>
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2">
+          <Flex gap="2">
+            <Checkbox
+              checked={contentProtection.mainWindow}
+              onCheckedChange={handleMainWindowContentProtectionChange}
+            />
+            在屏幕采集中隐藏主窗口
+          </Flex>
+        </Text>
+        <Text as="label" size="2">
+          <Flex gap="2">
+            <Checkbox
+              checked={contentProtection.chatOverlayWindow}
+              onCheckedChange={handleChatOverlayWindowContentProtectionChange}
+            />
+            在屏幕采集中隐藏弹幕浮层窗口
+          </Flex>
+        </Text>
       </Flex>
     </Box>
   );
