@@ -25,6 +25,7 @@ import {
 import {
   MagnifyingGlassIcon,
   PlayIcon,
+  TrackNextIcon,
   PlusIcon,
   PinTopIcon,
   TrashIcon,
@@ -605,6 +606,15 @@ const SongRequest: React.FC = () => {
           </Flex>
         )}
         <Box ref={playerContainerRef} className="!m-0" />
+
+        {/* 悬浮的下一首按钮 */}
+        <Box position="absolute" top="2" right="2">
+          <Tooltip content="下一首">
+            <IconButton size="3" color="gray" variant="ghost" onClick={() => playNextSong()}>
+              <TrackNextIcon width={16} height={16} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
     </Box>
   );
