@@ -40,3 +40,7 @@ button.active {
 .aplayer.aplayer-withlist .aplayer-info {
   border-bottom: none !important;
 }
+
+.aplayer .aplayer-info .aplayer-music {
+  margin-right: 15px;
+}

@@ -629,13 +629,13 @@ const SongRequest: React.FC = () => {
       gap="2"
       key={`req-${index}`}
     >
-      <Text className="flex-2" size="2" truncate>
+      <Text className="flex-2 w-0" size="2" truncate>
         {song.name}
       </Text>
-      <Text className="flex-1" color="gray" size="1" truncate>
+      <Text className="flex-1 w-0" color="gray" size="1" truncate>
         {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
       </Text>
-      <Text className="flex-1" color="gray" size="1" truncate>
+      <Text className="flex-1 w-0" color="gray" size="1" truncate>
         {song.requester}
       </Text>
       <Box
@@ -700,10 +700,10 @@ const SongRequest: React.FC = () => {
         key={`req-${index}`}
       >
         {isCurrent && <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-[#ff92ad]"></div>}
-        <Text className="flex-2" size="2" truncate>
+        <Text className="flex-2 w-0" size="2" truncate>
           {song.name}
         </Text>
-        <Text className="flex-1" color="gray" size="1" truncate>
+        <Text className="flex-1 w-0" color="gray" size="1" truncate>
           {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
         </Text>
         <Box
@@ -767,10 +767,10 @@ const SongRequest: React.FC = () => {
       gap="2"
       key={`history-${index}`}
     >
-      <Text className="flex-2" size="2" truncate>
+      <Text className="flex-2 w-0" size="2" truncate>
         {song.name}
       </Text>
-      <Text className="flex-1" color="gray" size="1" truncate>
+      <Text className="flex-1 w-0" color="gray" size="1" truncate>
         {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
       </Text>
       <Box
@@ -1349,13 +1349,13 @@ const SongRequest: React.FC = () => {
           gap="2"
           key={`${song.source}-${song.id}`}
         >
-          <Text className="flex-2" size="2" truncate>
+          <Text className="flex-2 w-0" size="2" truncate>
             {song.name}
           </Text>
-          <Text className="flex-1" color="gray" size="1" truncate>
+          <Text className="flex-1 w-0" color="gray" size="1" truncate>
             {Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist}
           </Text>
-          <Text className="flex-1" color="gray" size="1" truncate>
+          <Text className="flex-1 w-0" color="gray" size="1" truncate>
             {song.album}
           </Text>
           <Box
@@ -1417,13 +1417,13 @@ const SongRequest: React.FC = () => {
   return (
     <Flex height="100%" maxHeight="100%" gap="4">
       {/* 左侧：播放区域 */}
-      <Flex direction="column" className="flex-2">
+      <Flex direction="column" className="flex-2 w-0">
         {renderPlayer()}
         {renderPlaylistTabs()}
       </Flex>
 
       {/* 右侧：操作区域 */}
-      <Flex direction="column" className="flex-3">
+      <Flex direction="column" className="flex-3 w-0">
         {renderDanmuControls()}
         {renderSyncControls()}
         {renderSearchSection()}
