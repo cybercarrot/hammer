@@ -78,29 +78,25 @@ const Settings: React.FC = () => {
         </Text>
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
-      <Flex gap="2" align="center" mb="2">
+      <Flex direction="column" gap="2" align="start">
         <Button size="1" variant="soft" onClick={handleResetWindowSizeAndPosition}>
           重置主窗口大小位置
         </Button>
-      </Flex>
-      <Flex direction="column" gap="2">
-        <Text as="label" size="2">
-          <Flex gap="2">
-            <Checkbox
-              checked={contentProtection.mainWindow}
-              onCheckedChange={handleMainWindowContentProtectionChange}
-            />
-            在屏幕采集中隐藏主窗口
-          </Flex>
+        <Text as="label" size="2" className="flex-none">
+          <Checkbox
+            className="mr-2!"
+            checked={contentProtection.mainWindow}
+            onCheckedChange={handleMainWindowContentProtectionChange}
+          />
+          在屏幕采集中隐藏主窗口
         </Text>
         <Text as="label" size="2">
-          <Flex gap="2">
-            <Checkbox
-              checked={contentProtection.chatOverlayWindow}
-              onCheckedChange={handleChatOverlayWindowContentProtectionChange}
-            />
-            在屏幕采集中隐藏弹幕浮层窗口
-          </Flex>
+          <Checkbox
+            className="mr-2!"
+            checked={contentProtection.chatOverlayWindow}
+            onCheckedChange={handleChatOverlayWindowContentProtectionChange}
+          />
+          在屏幕采集中隐藏弹幕浮层窗口
         </Text>
       </Flex>
     </Box>
