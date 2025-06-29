@@ -102,6 +102,34 @@ const SongRequest: React.FC = () => {
   const [obsConfiguring, setObsConfiguring] = useState(false);
   const [obsSyncEnabled, setObsSyncEnabled] = useState(false);
 
+  // 添加textarea的ref
+  const textTemplateRef = useRef<HTMLTextAreaElement>(null);
+  const playlistTemplateRef = useRef<HTMLTextAreaElement>(null);
+
+  // 插入关键字的函数
+  const insertKeyword = (ref: React.RefObject<HTMLTextAreaElement>, keyword: string) => {
+    const textarea = ref.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      const newValue = value.substring(0, start) + keyword + value.substring(end);
+
+      // 更新对应的配置
+      if (ref === textTemplateRef) {
+        updateOBSConfig({ textTemplate: newValue });
+      } else if (ref === playlistTemplateRef) {
+        updateOBSConfig({ playlistTemplate: newValue });
+      }
+
+      // 设置光标位置
+      setTimeout(() => {
+        textarea.setSelectionRange(start + keyword.length, start + keyword.length);
+        textarea.focus();
+      }, 0);
+    }
+  };
+
   // 歌曲搜索
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSource, setSearchSource] = useState('netease');
@@ -1125,39 +1153,53 @@ const SongRequest: React.FC = () => {
             <Text size="2" as="p" mb="2">
               文字源模板
             </Text>
-            <Flex direction="row" gap="2" align="center" mb="2">
+            <Flex direction="row" gap="2" align="center" mb="2" wrap="wrap">
               <Text size="1" color="gray">
                 关键字:
               </Text>
-              <Badge variant="surface">{'{歌曲名}'}</Badge>
-              <Badge variant="surface">{'{歌手}'}</Badge>
-              <Badge variant="surface">{'{点歌者}'}</Badge>
-              <Badge variant="surface">{'{点歌列表}'}</Badge>
+              {[
+                { key: '{歌曲名}', label: '歌曲名' },
+                { key: '{歌手}', label: '歌手' },
+                { key: '{点歌者}', label: '点歌者' },
+                { key: '{点歌列表}', label: '点歌列表' },
+              ].map(({ key, label }) => (
+                <Button key={key} variant="soft" size="1" onClick={() => insertKeyword(textTemplateRef, key)}>
+                  {label}
+                </Button>
+              ))}
             </Flex>
             <TextArea
               mb="4"
               value={obsConfig.textTemplate}
               onChange={e => updateOBSConfig({ textTemplate: e.target.value })}
               rows={3}
+              ref={textTemplateRef}
             />
 
             <Text as="p" mb="2">
               点歌列表项模板
             </Text>
-            <Flex direction="row" gap="2" align="center" mb="2">
+            <Flex direction="row" gap="2" align="center" mb="2" wrap="wrap">
               <Text size="1" color="gray">
                 关键字:
               </Text>
-              <Badge variant="surface">{'{序号}'}</Badge>
-              <Badge variant="surface">{'{歌曲名}'}</Badge>
-              <Badge variant="surface">{'{歌手}'}</Badge>
-              <Badge variant="surface">{'{点歌者}'}</Badge>
+              {[
+                { key: '{序号}', label: '序号' },
+                { key: '{歌曲名}', label: '歌曲名' },
+                { key: '{歌手}', label: '歌手' },
+                { key: '{点歌者}', label: '点歌者' },
+              ].map(({ key, label }) => (
+                <Button key={key} variant="soft" size="1" onClick={() => insertKeyword(playlistTemplateRef, key)}>
+                  {label}
+                </Button>
+              ))}
             </Flex>
             <TextArea
               mb="4"
               value={obsConfig.playlistTemplate}
               onChange={e => updateOBSConfig({ playlistTemplate: e.target.value })}
               rows={2}
+              ref={playlistTemplateRef}
             />
 
             {/* 重置按钮 */}
