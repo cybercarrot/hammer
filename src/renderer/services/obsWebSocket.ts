@@ -21,7 +21,7 @@ interface OBSSource {
 class OBSWebSocketService {
   private obs: OBSWebSocket;
   private config: OBSConfig;
-  private isConnected: boolean = false;
+  private isConnected = false;
   private sourceName = '锤子播放状态';
 
   constructor() {
@@ -120,7 +120,7 @@ class OBSWebSocketService {
   }
 
   // 创建文字源
-  private async createTextSource(sourceName: string, text: string = ''): Promise<void> {
+  private async createTextSource(sourceName: string, text = ''): Promise<void> {
     // 获取可用的输入源类型
     const availableKinds = await this.getAvailableInputKinds();
 
@@ -211,10 +211,7 @@ class OBSWebSocketService {
     }
 
     // 创建点歌机源
-    const template = this.config.textTemplate;
-    const defaultText = '';
-
-    await this.createTextSource(this.sourceName, defaultText);
+    await this.createTextSource(this.sourceName);
 
     console.log(`已在场景 "${currentScene}" 中创建点歌机源`);
     return true;

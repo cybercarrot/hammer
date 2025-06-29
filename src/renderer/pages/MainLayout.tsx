@@ -93,9 +93,7 @@ const MainLayout: React.FC = () => {
         <Box p="2" className="border-t [border-color:var(--gray-5)]">
           <Flex justify="end">
             <Flex gap="2" align="center">
-              <Badge variant="solid" color="jade">
-                v{packageJson.version}
-              </Badge>
+              <Badge variant="solid">v{packageJson.version}</Badge>
               <Badge variant="solid" color="crimson">
                 by 阿酒
               </Badge>

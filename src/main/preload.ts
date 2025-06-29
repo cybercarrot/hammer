@@ -34,6 +34,29 @@ interface ElectronAPI {
     quit: () => Promise<{
       success: boolean;
     }>;
+    checkForUpdates: () => Promise<{
+      success: boolean;
+      currentVersion?: string;
+      latestVersion?: string;
+      hasUpdate?: boolean;
+      releaseUrl?: string;
+      releaseNotes?: string;
+      publishedAt?: string;
+      error?: string;
+    }>;
+    downloadUpdate: (options?: any) => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    installUpdate: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    onUpdateAvailable: (callback: () => void) => () => void;
+    onUpdateError: (callback: (info: { message: string }) => void) => () => void;
+    onUpdateDownloaded: (
+      callback: (info: { releaseNotes: string; releaseName: string; releaseDate: Date; updateURL: string }) => void
+    ) => () => void;
   };
   chatOverlay: {
     open: (contentProtectionEnabled?: boolean) => Promise<{
@@ -104,6 +127,42 @@ contextBridge.exposeInMainWorld('electron', {
     // 退出应用程序
     quit: () => {
       return ipcRenderer.invoke('app:quit');
+    },
+    // 检查更新
+    checkForUpdates: () => {
+      return ipcRenderer.invoke('app:check-for-updates');
+    },
+    // 执行更新
+    downloadUpdate: (options?: any) => {
+      return ipcRenderer.invoke('app:download-update', options);
+    },
+    // 安装更新
+    installUpdate: () => {
+      return ipcRenderer.invoke('app:install-update');
+    },
+    // 监听更新可用事件
+    onUpdateAvailable: (callback: () => void) => {
+      ipcRenderer.on('app:update-available', callback);
+      // 返回清理函数
+      return () => {
+        ipcRenderer.removeListener('app:update-available', callback);
+      };
+    },
+    // 监听更新错误事件
+    onUpdateError: (callback: (info: any) => void) => {
+      ipcRenderer.on('app:update-error', (_, info) => callback(info));
+      // 返回清理函数
+      return () => {
+        ipcRenderer.removeListener('app:update-error', callback);
+      };
+    },
+    // 监听更新下载完成事件
+    onUpdateDownloaded: (callback: (info: any) => void) => {
+      ipcRenderer.on('app:update-downloaded', (_, info) => callback(info));
+      // 返回清理函数
+      return () => {
+        ipcRenderer.removeListener('app:update-downloaded', callback);
+      };
     },
   },
 

@@ -12,5 +12,8 @@ export const WINDOW_CONFIG = {
   },
 } as const;
 
-// 导出类型
-export type WindowConfig = typeof WINDOW_CONFIG;
+// GitHub 相关配置
+export const GITHUB_CONFIG = {
+  // GitHub 代理地址
+  PROXY: 'https://github.acmsz.top',
+} as const;

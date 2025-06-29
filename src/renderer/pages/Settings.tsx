@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Button, Flex, Separator, Text, Checkbox } from '@radix-ui/themes';
 import { useSettingStore } from '../store/settingStore';
+import VersionManager from '../components/VersionManager';
 
 // MARK: 设置
 const Settings: React.FC = () => {
@@ -78,7 +79,7 @@ const Settings: React.FC = () => {
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
       <Flex gap="2" align="center" mb="2">
-        <Button size="2" onClick={handleResetWindowSizeAndPosition}>
+        <Button size="1" variant="soft" onClick={handleResetWindowSizeAndPosition}>
           重置主窗口大小位置
         </Button>
       </Flex>
@@ -105,6 +106,19 @@ const Settings: React.FC = () => {
     </Box>
   );
 
+  // MARK: 渲染版本管理区域
+  const renderVersionControls = () => (
+    <Box className="mb-4">
+      <Flex align="center" mb="2">
+        <Text size="1" color="gray">
+          版本管理
+        </Text>
+        <Separator orientation="horizontal" className="flex-auto ml-2" />
+      </Flex>
+      <VersionManager />
+    </Box>
+  );
+
   // MARK: 渲染其他区域
   const renderOtherControls = () => (
     <Box className="mb-4">
@@ -114,7 +128,7 @@ const Settings: React.FC = () => {
         </Text>
         <Separator orientation="horizontal" className="flex-auto ml-2" />
       </Flex>
-      <Button size="2" color="red" onClick={handleQuitApp}>
+      <Button size="2" variant="soft" color="red" onClick={handleQuitApp}>
         退出程序
       </Button>
     </Box>
@@ -123,6 +137,7 @@ const Settings: React.FC = () => {
   return (
     <Flex direction="column" height="100%">
       {renderInterfaceControls()}
+      {renderVersionControls()}
       {renderOtherControls()}
     </Flex>
   );
