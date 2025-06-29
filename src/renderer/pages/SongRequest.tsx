@@ -306,19 +306,36 @@ const SongRequest: React.FC = () => {
       // 检查是否包含黑名单关键词
       if (hasBlacklistedKeyword(keyword)) {
         console.log(`已拦截黑名单关键词点歌: ${keyword}`);
-        showToast(`${requester}的点歌包含黑名单关键词，已拦截`, 'error');
+        showToast(`已拦截黑名单关键词点歌: ${keyword}`, 'error');
         return;
       }
-
+      // 检查点歌者
+      if (hasBlacklistedKeyword(requester)) {
+        console.log(`已拦截黑名单关键词点歌者: ${requester}`);
+        showToast(`已拦截黑名单关键词点歌者: ${requester}`, 'error');
+        return;
+      }
       const results = await searchSongs(keyword, source as 'netease' | 'kuwo' | 'tidal' | 'joox');
       if (results.length > 0) {
         const song = {
           ...results[0],
           requester, // 添加点歌者信息
         };
+        // 检查歌曲名
+        if (hasBlacklistedKeyword(song.name)) {
+          console.log(`已拦截黑名单关键词歌曲名: ${song.name}`);
+          showToast(`已拦截黑名单关键词歌曲名: ${song.name}`, 'error');
+          return;
+        }
+        // 检查歌手
+        const artistName = Array.isArray(song.artist) ? song.artist.join('/') : song.artist || '';
+        if (artistName && hasBlacklistedKeyword(artistName)) {
+          console.log(`已拦截黑名单关键词歌手: ${artistName}`);
+          showToast(`已拦截黑名单关键词歌手: ${artistName}`, 'error');
+          return;
+        }
         addSongToRequestPlaylist(song);
-        const artistName = Array.isArray(song.artist) ? song.artist.join('/') : song.artist || '未知艺术家';
-        showToast(`已添加${requester}的点歌: ${song.name} - ${artistName}`, 'info');
+        showToast(`已添加${requester}的点歌: ${song.name} - ${artistName || '未知艺术家'}`, 'info');
       } else {
         showToast(`${requester}点歌未找到: ${keyword}`, 'error');
       }
