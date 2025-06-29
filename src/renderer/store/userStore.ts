@@ -63,7 +63,7 @@ export const useUserStore = create<UserState>()(
       logout: () => {
         // 清除 bilibili cookie
         if (window.electron) {
-          window.electron.utils.sendToMain('app:logout', null);
+          window.electron.app.logout();
         }
         // 重置状态
         get().clearLoginState();

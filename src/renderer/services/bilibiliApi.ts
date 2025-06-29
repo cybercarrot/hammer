@@ -117,7 +117,7 @@ export interface UserInfoResponse {
       tv_due_date: number;
       avatar_icon: {
         icon_type: number;
-        icon_resource: Record<string, any>;
+        icon_resource: Record<string, unknown>;
       };
     };
     wallet: {
@@ -135,7 +135,7 @@ export interface UserInfoResponse {
       sub_url: string;
     };
     is_jury: boolean;
-    name_render: any;
+    name_render: unknown;
   };
 }
 

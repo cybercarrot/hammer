@@ -1,13 +1,22 @@
-// See the Electron documentation for details on how to use preload scripts:
-// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
-
 import { contextBridge, ipcRenderer } from 'electron';
 
+// 声明全局类型
+declare global {
+  interface Window {
+    electron: ElectronAPI;
+  }
+}
+
+// 定义通用的更新相关类型
+type UpdateErrorInfo = { message: string };
+type UpdateDownloadedInfo = {
+  releaseNotes: string;
+  releaseName: string;
+  releaseDate: Date;
+  updateURL: string;
+};
+
 interface ElectronAPI {
-  utils: {
-    sendToMain: (channel: string, data: any) => void;
-    onFromMain: (channel: string, callback: (...args: any[]) => void) => void;
-  };
   cookies: {
     getCookiesByDomains: (domains: string[]) => Promise<{
       success: boolean;
@@ -34,6 +43,10 @@ interface ElectronAPI {
     quit: () => Promise<{
       success: boolean;
     }>;
+    logout: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
     checkForUpdates: () => Promise<{
       success: boolean;
       currentVersion?: string;
@@ -44,7 +57,7 @@ interface ElectronAPI {
       publishedAt?: string;
       error?: string;
     }>;
-    downloadUpdate: (options?: any) => Promise<{
+    downloadUpdate: () => Promise<{
       success: boolean;
       error?: string;
     }>;
@@ -53,10 +66,8 @@ interface ElectronAPI {
       error?: string;
     }>;
     onUpdateAvailable: (callback: () => void) => () => void;
-    onUpdateError: (callback: (info: { message: string }) => void) => () => void;
-    onUpdateDownloaded: (
-      callback: (info: { releaseNotes: string; releaseName: string; releaseDate: Date; updateURL: string }) => void
-    ) => () => void;
+    onUpdateError: (callback: (info: UpdateErrorInfo) => void) => () => void;
+    onUpdateDownloaded: (callback: (info: UpdateDownloadedInfo) => void) => () => void;
   };
   chatOverlay: {
     open: (contentProtectionEnabled?: boolean) => Promise<{
@@ -80,30 +91,11 @@ interface ElectronAPI {
   };
 }
 
-declare global {
-  interface Window {
-    electron: ElectronAPI;
-  }
-}
-
-// 暴露安全的API给渲染进程
-contextBridge.exposeInMainWorld('electron', {
-  // 提供一些通用工具函数
-  utils: {
-    // 向主进程发送消息
-    sendToMain: (channel: string, data: any) => {
-      ipcRenderer.send(channel, data);
-    },
-    // 接收来自主进程的消息
-    onFromMain: (channel: string, callback: (...args: any[]) => void) => {
-      ipcRenderer.on(channel, (_, ...args) => callback(...args));
-    },
-  },
-
+const electronAPI: ElectronAPI = {
   // Cookies相关操作
   cookies: {
     // 获取指定域名的cookies
-    getCookiesByDomains: (domains: string[]) => {
+    getCookiesByDomains: domains => {
       return ipcRenderer.invoke('get-cookies-by-domains', domains);
     },
   },
@@ -111,57 +103,46 @@ contextBridge.exposeInMainWorld('electron', {
   // Window相关操作
   window: {
     // 重置窗口大小与位置
-    resetSizeAndPosition: () => {
-      return ipcRenderer.invoke('window:reset-size-and-position');
-    },
-    setContentProtection: (enabled: boolean) => {
-      return ipcRenderer.invoke('window:set-content-protection', enabled);
-    },
-    getContentProtectionSettings: () => {
-      return ipcRenderer.invoke('window:get-content-protection-settings');
-    },
+    resetSizeAndPosition: () => ipcRenderer.invoke('window:reset-size-and-position'),
+    setContentProtection: enabled => ipcRenderer.invoke('window:set-content-protection', enabled),
+    getContentProtectionSettings: () => ipcRenderer.invoke('window:get-content-protection-settings'),
   },
 
   // App相关操作
   app: {
     // 退出应用程序
-    quit: () => {
-      return ipcRenderer.invoke('app:quit');
-    },
+    quit: () => ipcRenderer.invoke('app:quit'),
+    logout: () => ipcRenderer.invoke('app:logout'),
     // 检查更新
-    checkForUpdates: () => {
-      return ipcRenderer.invoke('app:check-for-updates');
-    },
+    checkForUpdates: () => ipcRenderer.invoke('app:check-for-updates'),
     // 执行更新
-    downloadUpdate: (options?: any) => {
-      return ipcRenderer.invoke('app:download-update', options);
-    },
+    downloadUpdate: () => ipcRenderer.invoke('app:download-update'),
     // 安装更新
-    installUpdate: () => {
-      return ipcRenderer.invoke('app:install-update');
-    },
+    installUpdate: () => ipcRenderer.invoke('app:install-update'),
     // 监听更新可用事件
-    onUpdateAvailable: (callback: () => void) => {
+    onUpdateAvailable: callback => {
       ipcRenderer.on('app:update-available', callback);
       // 返回清理函数
       return () => {
-        ipcRenderer.removeListener('app:update-available', callback);
+        ipcRenderer.off('app:update-available', callback);
       };
     },
     // 监听更新错误事件
-    onUpdateError: (callback: (info: any) => void) => {
-      ipcRenderer.on('app:update-error', (_, info) => callback(info));
+    onUpdateError: callback => {
+      const listener = (_: Electron.IpcRendererEvent, info: UpdateErrorInfo) => callback(info);
+      ipcRenderer.on('app:update-error', listener);
       // 返回清理函数
       return () => {
-        ipcRenderer.removeListener('app:update-error', callback);
+        ipcRenderer.off('app:update-error', listener);
       };
     },
     // 监听更新下载完成事件
-    onUpdateDownloaded: (callback: (info: any) => void) => {
-      ipcRenderer.on('app:update-downloaded', (_, info) => callback(info));
+    onUpdateDownloaded: callback => {
+      const listener = (_: Electron.IpcRendererEvent, info: UpdateDownloadedInfo) => callback(info);
+      ipcRenderer.on('app:update-downloaded', listener);
       // 返回清理函数
       return () => {
-        ipcRenderer.removeListener('app:update-downloaded', callback);
+        ipcRenderer.off('app:update-downloaded', listener);
       };
     },
   },
@@ -169,7 +150,7 @@ contextBridge.exposeInMainWorld('electron', {
   // ChatOverlay相关操作
   chatOverlay: {
     // 打开聊天窗口
-    open: (contentProtectionEnabled?: boolean) => {
+    open: contentProtectionEnabled => {
       return ipcRenderer.invoke('chat-overlay:open', contentProtectionEnabled);
     },
     // 关闭聊天窗口
@@ -177,7 +158,7 @@ contextBridge.exposeInMainWorld('electron', {
       return ipcRenderer.invoke('chat-overlay:close');
     },
     // 监听弹幕浮层关闭事件
-    onClosed: (callback: () => void) => {
+    onClosed: callback => {
       ipcRenderer.on('chat-overlay:closed', callback);
       // 返回清理函数
       return () => {
@@ -188,8 +169,11 @@ contextBridge.exposeInMainWorld('electron', {
     resetSizeAndPosition: () => {
       return ipcRenderer.invoke('chat-overlay:reset-size-and-position');
     },
-    setContentProtection: (enabled: boolean) => {
+    setContentProtection: enabled => {
       return ipcRenderer.invoke('chat-overlay:set-content-protection', enabled);
     },
   },
-});
+};
+
+// 暴露安全的API给渲染进程
+contextBridge.exposeInMainWorld('electron', electronAPI);

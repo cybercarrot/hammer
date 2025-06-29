@@ -1,4 +1,4 @@
-import OBSWebSocket from 'obs-websocket-js';
+import { OBSWebSocket } from 'obs-websocket-js';
 import { Song } from '../store/songStore';
 import { getInitialOBSConfig } from '../store/settingStore';
 
@@ -36,9 +36,9 @@ class OBSWebSocketService {
 
   // 连接到OBS
   async connect(): Promise<{
-    on: (event: string, fn: (...args: any[]) => void) => void;
-    once: (event: string, fn: (...args: any[]) => void) => void;
-    off: (event: string, fn: (...args: any[]) => void) => void;
+    on: (event: string, fn: (...args: unknown[]) => void) => void;
+    once: (event: string, fn: (...args: unknown[]) => void) => void;
+    off: (event: string, fn: (...args: unknown[]) => void) => void;
   }> {
     if (this.isConnected) {
       return { on: this.obs.on.bind(this.obs), once: this.obs.once.bind(this.obs), off: this.obs.off.bind(this.obs) };
@@ -73,7 +73,7 @@ class OBSWebSocketService {
   // 获取场景中的源列表
   private async getSceneSources(sceneName: string): Promise<OBSSource[]> {
     const response = await this.obs.call('GetSceneItemList', { sceneName });
-    return response.sceneItems.map((item: any) => ({
+    return response.sceneItems.map((item: { sourceName: string; sourceType: string; sourceKind: string }) => ({
       sourceName: item.sourceName,
       sourceType: item.sourceType,
       sourceKind: item.sourceKind,
@@ -198,7 +198,9 @@ class OBSWebSocketService {
     if (hasSource) {
       // 如果源已存在，将其设置为可见
       const sceneResponse = await this.obs.call('GetSceneItemList', { sceneName: currentScene });
-      const sceneItem = sceneResponse.sceneItems.find((item: any) => item.sourceName === this.sourceName);
+      const sceneItem = sceneResponse.sceneItems.find(
+        (item: { sourceName: string; sceneItemId: number }) => item.sourceName === this.sourceName
+      );
       if (sceneItem) {
         await this.obs.call('SetSceneItemEnabled', {
           sceneName: currentScene,
@@ -222,7 +224,9 @@ class OBSWebSocketService {
     const currentScene = await this.getCurrentSceneName();
     const sceneResponse = await this.obs.call('GetSceneItemList', { sceneName: currentScene });
 
-    const sceneItem = sceneResponse.sceneItems.find((item: any) => item.sourceName === this.sourceName);
+    const sceneItem = sceneResponse.sceneItems.find(
+      (item: { sourceName: string; sceneItemId: number }) => item.sourceName === this.sourceName
+    );
     if (sceneItem) {
       await this.obs.call('SetSceneItemEnabled', {
         sceneName: currentScene,
