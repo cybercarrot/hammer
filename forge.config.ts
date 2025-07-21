@@ -1,8 +1,8 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-// import { MakerZIP } from '@electron-forge/maker-zip';
-// import { MakerDeb } from '@electron-forge/maker-deb';
-// import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerDeb } from '@electron-forge/maker-deb';
+import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
@@ -17,6 +17,7 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
+    // Windows - Squirrel installer
     new MakerSquirrel({
       title: '锤子',
       iconUrl: 'https://img.picui.cn/free/2025/06/28/685f5bdde3af6.ico',
@@ -24,9 +25,28 @@ const config: ForgeConfig = {
       setupExe: 'Setup.exe',
       remoteReleases: `${GITHUB_CONFIG.PROXY}/https://github.com/zack24q/hammer/releases/latest/download`,
     }),
-    // new MakerZIP({}, ['darwin']),
-    // new MakerRpm({}),
-    // new MakerDeb({}),
+    // macOS - ZIP archive
+    new MakerZIP({}, ['darwin']),
+    // Linux - DEB package
+    new MakerDeb({
+      options: {
+        maintainer: '阿酒(zack)',
+        homepage: 'https://github.com/zack24q/hammer',
+        description: '一把锤子，专门敲打阿B直播',
+        categories: ['AudioVideo', 'Audio', 'Video'],
+        icon: 'src/assets/icon.ico',
+      },
+    }),
+    // Linux - RPM package
+    new MakerRpm({
+      options: {
+        maintainer: '阿酒(zack)',
+        homepage: 'https://github.com/zack24q/hammer',
+        description: '一把锤子，专门敲打阿B直播',
+        categories: ['AudioVideo', 'Audio', 'Video'],
+        icon: 'src/assets/icon.ico',
+      },
+    }),
   ],
   publishers: [
     new PublisherGithub({
@@ -56,23 +76,23 @@ const config: ForgeConfig = {
           config: 'vite.preload.config.ts',
           target: 'preload',
         },
-        {
-          entry: {
-            'preload-chat-overlay': 'chat-overlay/src/preload.ts',
-          },
-          config: 'vite.preload-chat-overlay.config.ts',
-          target: 'preload',
-        },
+        // {
+        //   entry: {
+        //     'preload-chat-overlay': 'chat-overlay/src/preload.ts',
+        //   },
+        //   config: 'vite.preload-chat-overlay.config.ts',
+        //   target: 'preload',
+        // },
       ],
       renderer: [
         {
           name: 'main_window',
           config: 'vite.renderer.config.mts',
         },
-        {
-          name: 'chat_overlay_window',
-          config: 'vite.renderer-chat-overlay.config.ts',
-        },
+        // {
+        //   name: 'chat_overlay_window',
+        //   config: 'vite.renderer-chat-overlay.config.ts',
+        // },
       ],
     }),
     // Fuses are used to enable/disable various Electron functionality
