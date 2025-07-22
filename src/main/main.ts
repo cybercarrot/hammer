@@ -22,9 +22,14 @@ const initApp = () => {
 
   // MARK: 设置自动更新服务
   const setupAutoUpdater = () => {
-    // 设置更新服务器地址 使用代理
+    // 设置更新服务器地址 根据环境选择是否使用代理
+    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+    const updateUrl = isCI 
+      ? 'https://github.com/zack24q/hammer/releases/latest/download'
+      : `${GITHUB_CONFIG.PROXY}/https://github.com/zack24q/hammer/releases/latest/download`;
+    
     autoUpdater.setFeedURL({
-      url: `${GITHUB_CONFIG.PROXY}/https://github.com/zack24q/hammer/releases/latest/download`,
+      url: updateUrl,
     });
 
     // 监听更新错误事件
@@ -445,8 +450,12 @@ const initApp = () => {
         throw new Error('无法从 package.json 中获取仓库信息');
       }
 
-      // 调用GitHub API获取最新版本(使用代理)
-      const response = await fetch(`${GITHUB_CONFIG.PROXY}/https://api.github.com/repos/${repo}/releases/latest`);
+      // 调用GitHub API获取最新版本(根据环境选择是否使用代理)
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+      const apiUrl = isCI 
+        ? `https://api.github.com/repos/${repo}/releases/latest`
+        : `${GITHUB_CONFIG.PROXY}/https://api.github.com/repos/${repo}/releases/latest`;
+      const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
       }

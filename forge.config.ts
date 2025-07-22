@@ -9,6 +9,10 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { PublisherGithub } from '@electron-forge/publisher-github';
 import { GITHUB_CONFIG } from './src/main/config';
 
+// 检测是否在CI环境中，如果是则使用直接GitHub地址，否则使用代理
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const githubBaseUrl = isCI ? 'https://github.com' : GITHUB_CONFIG.PROXY + '/https://github.com';
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
@@ -23,7 +27,7 @@ const config: ForgeConfig = {
       iconUrl: 'https://img.picui.cn/free/2025/06/28/685f5bdde3af6.ico',
       authors: '阿酒(zack)',
       setupExe: 'Setup.exe',
-      remoteReleases: `${GITHUB_CONFIG.PROXY}/https://github.com/zack24q/hammer/releases/latest/download`,
+      remoteReleases: `${githubBaseUrl}/zack24q/hammer/releases/latest/download`,
     }),
     // macOS - ZIP archive
     new MakerZIP({}, ['darwin']),
