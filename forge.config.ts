@@ -27,7 +27,8 @@ const config: ForgeConfig = {
       iconUrl: 'https://img.picui.cn/free/2025/06/28/685f5bdde3af6.ico',
       authors: '阿酒(zack)',
       setupExe: 'Setup.exe',
-      remoteReleases: `${githubBaseUrl}/zack24q/hammer/releases/latest/download`,
+      // 只在非CI环境或已有releases时设置remoteReleases
+      ...(isCI ? {} : { remoteReleases: `${githubBaseUrl}/zack24q/hammer/releases/latest/download` }),
     }),
     // macOS - ZIP archive
     new MakerZIP({}, ['darwin']),

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mkdir -p /Users/hoo/Documents/workspace/hammer/.github/workflows)",
       "Bash(git add .)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 添加GitHub Actions多平台自动化构建和发布系统\n\n- 配置多平台打包支持(Windows/macOS/Linux)\n- 启用所有Electron Forge makers\n- 创建完整的CI/CD workflow\n- 添加测试构建流程\n- 创建详细的构建说明文档\n- 添加CLAUDE.md项目指南文档\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 添加GitHub Actions多平台自动化构建和发布系统\n\n- 配置多平台打包支持(Windows/macOS/Linux)\n- 启用所有Electron Forge makers\n- 创建完整的CI/CD workflow\n- 添加测试构建流程\n- 创建详细的构建说明文档\n- 添加CLAUDE.md项目指南文档\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: 修复CI环境中GitHub代理访问问题\n\n- 根据环境变量检测CI环境\n- CI环境中直接使用GitHub地址，本地环境使用代理\n- 修复Squirrel构建器的remoteReleases配置\n- 修复autoUpdater和版本检查的API地址\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": []
   }

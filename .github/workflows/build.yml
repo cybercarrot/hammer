@@ -52,6 +52,8 @@ jobs:
       run: npm run make
       env:
         ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+        CI: true
+        GITHUB_ACTIONS: true
         
     - name: List output files (Debug)
       run: |

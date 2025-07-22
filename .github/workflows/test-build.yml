@@ -43,10 +43,16 @@ jobs:
       
     - name: Test build (package only)
       run: npm run package
+      env:
+        CI: true
+        GITHUB_ACTIONS: true
       
     - name: Test make (if not PR)
       if: github.event_name != 'pull_request'
       run: npm run make
+      env:
+        CI: true
+        GITHUB_ACTIONS: true
       
     - name: Upload test artifacts
       if: github.event_name != 'pull_request'
